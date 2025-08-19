@@ -292,8 +292,27 @@
         });
         winText.anchor.set(0.5);
         winText.x = GAME_WIDTH / 2;
-        winText.y = GAME_HEIGHT / 2 - 50;
+        winText.y = GAME_HEIGHT / 2 - 80;
         uiScene.addChild(winText);
+
+        // Play Again button
+        const playAgain = new PIXI.Text("▶ Play Again", {
+            fill: "#ffffff",
+            fontSize: 32,
+            fontWeight: "bold"
+        });
+        playAgain.anchor.set(0.5);
+        playAgain.x = GAME_WIDTH / 2;
+        playAgain.y = GAME_HEIGHT / 2;
+        playAgain.interactive = true;
+        playAgain.buttonMode = true;
+        playAgain.cursor = "pointer";
+
+        playAgain.on("pointerover", () => playAgain.style.fill = "#ffff66");
+        playAgain.on("pointerout", () => playAgain.style.fill = "#ffffff");
+        playAgain.on("pointerdown", resetGame);
+
+        uiScene.addChild(playAgain);
 
         if (win) {
             const link = new PIXI.Text("🎵 Listen to 'SOLDIER'", {
@@ -303,17 +322,43 @@
             });
             link.anchor.set(0.5);
             link.x = GAME_WIDTH / 2;
-            link.y = GAME_HEIGHT / 2 + 30;
+            link.y = GAME_HEIGHT / 2 + 60;
             link.interactive = true;
             link.buttonMode = true;
             link.cursor = "pointer";
             link.on("pointerover", () => link.style.fill = "#88ddff");
             link.on("pointerout", () => link.style.fill = "#44ccff");
-
             link.on("pointerdown", () => {
                 window.open("https://my-portfolio-website-silk-five.vercel.app/home", "_blank");
             });
             uiScene.addChild(link);
         }
+    }
+
+    // Reset game state
+    function resetGame() {
+        // Clear UI
+        uiScene.removeChildren();
+
+        // Reset variables
+        score = 0;
+        scoreText.text = `Score: ${score}`;
+        gameOver = false;
+
+        // Remove old objects
+        [...projectiles, ...enemies, ...collectibles].forEach(obj => {
+            if (!obj.destroyed) obj.destroy();
+        });
+        projectiles.length = 0;
+        enemies.length = 0;
+        collectibles.length = 0;
+
+        // Reset player
+        player.x = GAME_WIDTH / 2;
+        player.y = GAME_HEIGHT - 50;
+
+        // Show scene again
+        gameScene.visible = true;
+        uiScene.addChild(scoreText);
     }
 })();
