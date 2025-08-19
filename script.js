@@ -71,6 +71,7 @@
         const btnSize = 60;
         const padding = 20;
 
+        // Left Button
         const leftBtn = new PIXI.Graphics()
             .beginFill(0xffffff, 0.2)
             .drawCircle(0, 0, btnSize)
@@ -83,6 +84,7 @@
         leftBtn.on("pointerup", () => keys["ArrowLeft"] = false);
         leftBtn.on("pointerupoutside", () => keys["ArrowLeft"] = false);
 
+        // Right Button
         const rightBtn = new PIXI.Graphics()
             .beginFill(0xffffff, 0.2)
             .drawCircle(0, 0, btnSize)
@@ -95,7 +97,20 @@
         rightBtn.on("pointerup", () => keys["ArrowRight"] = false);
         rightBtn.on("pointerupoutside", () => keys["ArrowRight"] = false);
 
-        gameScene.addChild(leftBtn, rightBtn);
+        // Shoot Button (bottom-right corner)
+        const shootBtn = new PIXI.Graphics()
+            .beginFill(0xff4444, 0.3) // red-ish so it’s easy to see
+            .drawCircle(0, 0, btnSize)
+            .endFill();
+        shootBtn.x = GAME_WIDTH - padding - btnSize;
+        shootBtn.y = GAME_HEIGHT - padding - btnSize;
+        shootBtn.interactive = true;
+        shootBtn.cursor = "pointer";
+        shootBtn.on("pointerdown", () => keys["Space"] = true);
+        shootBtn.on("pointerup", () => keys["Space"] = false);
+        shootBtn.on("pointerupoutside", () => keys["Space"] = false);
+
+        gameScene.addChild(leftBtn, rightBtn, shootBtn);
     }
 
     if ('ontouchstart' in window || navigator.maxTouchPoints) {
@@ -156,12 +171,12 @@
 
     // Simple collision check
     function hitTest(a, b) {
-        const ab = a.getBounds();
-        const bb = b.getBounds();
-        return ab.x + ab.width > bb.x &&
-            ab.x < bb.x + bb.width &&
-            ab.y + ab.height > bb.y &&
-            ab.y < bb.y + bb.height;
+        const boundsA = a.getBounds();
+        const boundsB = b.getBounds();
+        return boundsA.x + boundsA.width > boundsB.x &&
+            boundsA.x < boundsB.x + boundsB.width &&
+            boundsA.y + boundsA.height > boundsB.y &&
+            boundsA.y < boundsB.y + boundsB.height;
     }
 
     // Game loop
