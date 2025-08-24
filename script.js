@@ -76,7 +76,7 @@
             .beginFill(0xffffff, 0.2)
             .drawCircle(0, 0, btnSize)
             .endFill();
-        leftBtn.x = padding + btnSize;
+        leftBtn.x = GAME_WIDTH - padding - btnSize * 3;
         leftBtn.y = GAME_HEIGHT - padding - btnSize;
         leftBtn.interactive = true;
         leftBtn.cursor = "pointer";
@@ -89,7 +89,7 @@
             .beginFill(0xffffff, 0.2)
             .drawCircle(0, 0, btnSize)
             .endFill();
-        rightBtn.x = leftBtn.x + btnSize * 2;
+        rightBtn.x = GAME_WIDTH - padding - btnSize;
         rightBtn.y = leftBtn.y;
         rightBtn.interactive = true;
         rightBtn.cursor = "pointer";
@@ -102,7 +102,7 @@
             .beginFill(0xff4444, 0.3) // red-ish so it’s easy to see
             .drawCircle(0, 0, btnSize)
             .endFill();
-        shootBtn.x = GAME_WIDTH - padding - btnSize;
+        shootBtn.x = padding + btnSize;
         shootBtn.y = GAME_HEIGHT - padding - btnSize;
         shootBtn.interactive = true;
         shootBtn.cursor = "pointer";
