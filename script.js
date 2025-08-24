@@ -32,6 +32,8 @@
     // Game state
     let score = 0;
     let gameOver = false;
+    let startTime = 0;
+    let elapsedTime = 0; // in seconds
 
     // Containers
     const gameScene = new PIXI.Container();
@@ -60,6 +62,14 @@
     scoreText.x = 10;
     scoreText.y = 10;
     uiScene.addChild(scoreText);
+
+    const timerText = new PIXI.Text(`Time: 0s`, {
+        fill: "#fff",
+        fontSize: 24
+    });
+    timerText.x = GAME_WIDTH - 120;
+    timerText.y = 10;
+    uiScene.addChild(timerText);
 
     // Controls
     const keys = {};
@@ -129,6 +139,7 @@
         enemies.push(enemy);
     }
 
+    // Draw star
     function drawStar(graphics, x, y, radius, points, innerRadius, color) {
         graphics.beginFill(color);
         graphics.moveTo(x + radius, y);
@@ -169,7 +180,7 @@
         projectiles.push(proj);
     }
 
-    // Simple collision check
+    // Collision check
     function hitTest(a, b) {
         const boundsA = a.getBounds();
         const boundsB = b.getBounds();
@@ -182,6 +193,10 @@
     // Game loop
     app.ticker.add(() => {
         if (gameOver) return;
+
+        // Update timer
+        elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+        timerText.text = `Time: ${elapsedTime}s`;
 
         // Move player
         if (keys["ArrowLeft"] || keys["KeyA"]) player.x -= PLAYER_SPEED;
@@ -283,7 +298,7 @@
     function endGame(win) {
         gameOver = true;
         gameScene.visible = false;
-
+        uiScene.removeChild(timerText);
         const msg = win ? "Mission Complete!" : "Mission Failed";
         const winText = new PIXI.Text(msg, {
             fill: win ? "#00ff66" : "#ff3333",
@@ -314,7 +329,18 @@
 
         uiScene.addChild(playAgain);
 
+        // If player won:
         if (win) {
+            const timeResult = new PIXI.Text(`⏱ Time: ${elapsedTime}s`, {
+                fill: "#ffffff",
+                fontSize: 28,
+                fontWeight: "bold"
+            });
+            timeResult.anchor.set(0.5);
+            timeResult.x = GAME_WIDTH / 2;
+            timeResult.y = GAME_HEIGHT / 2 + 60;
+            uiScene.addChild(timeResult);
+
             const link = new PIXI.Text("🎵 Listen to 'SOLDIER'", {
                 fill: "#44ccff",
                 fontSize: 28,
@@ -322,7 +348,7 @@
             });
             link.anchor.set(0.5);
             link.x = GAME_WIDTH / 2;
-            link.y = GAME_HEIGHT / 2 + 60;
+            link.y = GAME_HEIGHT / 2 + 110;
             link.interactive = true;
             link.buttonMode = true;
             link.cursor = "pointer";
@@ -343,8 +369,11 @@
         // Reset variables
         score = 0;
         scoreText.text = `Score: ${score}`;
+        timerText.text = `Time: 0s`;
         gameOver = false;
-
+        startTime = Date.now();
+        elapsedTime = 0;
+        
         // Remove old objects
         [...projectiles, ...enemies, ...collectibles].forEach(obj => {
             if (!obj.destroyed) obj.destroy();
@@ -359,6 +388,9 @@
 
         // Show scene again
         gameScene.visible = true;
-        uiScene.addChild(scoreText);
+        uiScene.addChild(scoreText, timerText);
     }
+
+    // Start the game
+    resetGame();
 })();
