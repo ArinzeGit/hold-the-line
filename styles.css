@@ -5,7 +5,7 @@ html, body {
     overflow: hidden;
 }
 
-#game-container {
+#game-container, canvas {
     width: 100vw;
     height: 100vh;
     user-select: none; /* disable text selection in general */
