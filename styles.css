@@ -8,6 +8,9 @@ html, body {
 #game-container {
     width: 100vw;
     height: 100vh;
+    -webkit-user-select: none; /* Safari / iOS */
+    -webkit-touch-callout: none; /* Prevent long press menu */
+    user-select: none; /* General */
 }
 
 #game-container canvas {
