@@ -8,15 +8,9 @@ html, body {
 #game-container {
     width: 100vw;
     height: 100vh;
-    -webkit-user-select: none; /* Safari / iOS */
-    -webkit-touch-callout: none; /* Prevent long press menu */
-    user-select: none; /* General */
-}
-
-#game-container canvas {
-  -webkit-user-select: none; /* disable text selection */
-  -webkit-touch-callout: none; /* disable long-press menu on iOS */
-  -webkit-tap-highlight-color: transparent; /* remove blue/gray highlight */
-  user-select: none;
-  touch-action: none; /* disables default gestures like double-tap zoom */
+    user-select: none; /* disable text selection in general */
+    -webkit-user-select: none; /* disable text selection in Safari / iOS */
+    -webkit-touch-callout: none; /* disable long-press menu on iOS */
+    -webkit-tap-highlight-color: transparent; /* remove blue/gray highlight */
+    touch-action: none; /* disables default gestures like double-tap zoom */
 }
