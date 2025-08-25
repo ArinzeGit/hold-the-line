@@ -9,3 +9,11 @@ html, body {
     width: 100vw;
     height: 100vh;
 }
+
+#game-container canvas {
+  -webkit-user-select: none; /* disable text selection */
+  -webkit-touch-callout: none; /* disable long-press menu on iOS */
+  -webkit-tap-highlight-color: transparent; /* remove blue/gray highlight */
+  user-select: none;
+  touch-action: none; /* disables default gestures like double-tap zoom */
+}
