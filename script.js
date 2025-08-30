@@ -6,7 +6,7 @@
     const PROJECTILE_SPEED = 8;
     const ENEMY_SPEED = 3;
     const COLLECTIBLE_SPEED = 2;
-    const TARGET_SCORE = 5;
+    const TARGET_WORD = "SOLDIER";
 
     // App setup
     const app = new PIXI.Application({
@@ -30,7 +30,7 @@
     resize();
 
     // Game state
-    let score = 0;
+    let collectedLetters = new Set();
     let gameOver = false;
     let startTime = 0;
     let elapsedTime = 0; // in seconds
@@ -55,14 +55,28 @@
     const collectibles = [];
 
     // UI
-    const scoreText = new PIXI.Text(`Score: ${score}`, {
-        fill: "#fff",
-        fontSize: 24
-    });
-    scoreText.x = 10;
-    scoreText.y = 10;
-    uiScene.addChild(scoreText);
 
+    // Letter display container
+    const wordDisplay = new PIXI.Container();
+    wordDisplay.x = 10;
+    wordDisplay.y = 10;
+    uiScene.addChild(wordDisplay);
+
+    const letterTexts = [];
+
+    for (let i = 0; i < TARGET_WORD.length; i++) {
+        const char = TARGET_WORD[i];
+        const letterText = new PIXI.Text(char, {
+            fill: "#555", // gray initially
+            fontSize: 32,
+            fontWeight: "bold"
+        });
+        letterText.x = i * 30; // spacing between letters
+        wordDisplay.addChild(letterText);
+        letterTexts.push(letterText);
+    }
+
+    // Timer display
     const timerText = new PIXI.Text(`Time: 0s`, {
         fill: "#fff",
         fontSize: 24
@@ -160,12 +174,18 @@
 
     // Spawn collectible
     function spawnCollectible() {
-        const col = new PIXI.Graphics();
-        drawStar(col, 0, 0, 10, 5, 5, 0xffff00);
-        col.x = Math.random() * (GAME_WIDTH - 20) + 10;
-        col.y = -20;
-        gameScene.addChild(col);
-        collectibles.push(col);
+    const letter = TARGET_WORD[Math.floor(Math.random() * TARGET_WORD.length)];
+    const col = new PIXI.Text(letter, {
+        fill: "#ffff00",
+        fontSize: 32,
+        fontWeight: "bold"
+    });
+    col.anchor.set(0.5);
+    col.x = Math.random() * (GAME_WIDTH - 40) + 20;
+    col.y = -20;
+    col.letter = letter; // store letter on collectible
+    gameScene.addChild(col);
+    collectibles.push(col);
     }
 
     // Shoot projectile
@@ -269,13 +289,22 @@
 
             // Collect
             if (hitTest(player, c)) {
-                score++;
-                scoreText.text = `Score: ${score}`;
+                if (!collectedLetters.has(c.letter)) {
+                    collectedLetters.add(c.letter);
+
+                    // Update that letter’s color
+                    for (let i = 0; i < TARGET_WORD.length; i++) {
+                        if (TARGET_WORD[i] === c.letter) {
+                            letterTexts[i].style.fill = "#ffff00"; // bright yellow when collected
+                        }
+                    }
+                }
+
                 gameScene.removeChild(c);
                 c.destroy();
                 collectibles.splice(i, 1);
 
-                if (score >= TARGET_SCORE) {
+                if (collectedLetters.size === TARGET_WORD.length) {
                     endGame(true);
                 }
             }
@@ -367,8 +396,7 @@
         uiScene.removeChildren();
 
         // Reset variables
-        score = 0;
-        scoreText.text = `Score: ${score}`;
+        collectedLetters.clear();
         timerText.text = `Time: 0s`;
         gameOver = false;
         startTime = Date.now();
@@ -386,9 +414,14 @@
         player.x = GAME_WIDTH / 2;
         player.y = GAME_HEIGHT - 50;
 
+        // Reset collected letters (set all back to gray)
+        letterTexts.forEach(letter => {
+            letter.style.fill = "#555"; 
+        });
+
         // Show scene again
         gameScene.visible = true;
-        uiScene.addChild(scoreText, timerText);
+        uiScene.addChild(wordDisplay, timerText);
     }
 
     // Start the game
