@@ -7,11 +7,17 @@
     const COLLECTIBLE_SPEED = 2;
     const TARGET_WORD = "SOLDIER";
     const NEGATIVE_EMOTIONS = [
-        "Fear", "Anxiety", "Doubt", "Anger", "Despair",
-        "Worry", "Guilt", "Shame", "Regret", "Sadness",
-        "Panic", "Hopelessness", "Loneliness", "Insecurity",
-        "Frustration", "Envy", "Hate", "Exhaustion"
+        "Fear", "Anxiety", "Doubt", "Anger", "Despair", "Guilt"
     ];
+    const EMOTION_COLORS = {
+        "Fear": 0x4A6CFF,
+        "Anxiety": 0xFF6EC7,
+        "Doubt": 0xFFD166,
+        "Anger": 0xFF3333,
+        "Despair": 0x8A2BE2,
+        "Guilt": 0x00D1A0
+    };
+
 
     // App setup
     const app = new PIXI.Application({
@@ -152,22 +158,25 @@
     // Create a container so enemy shape + text stick together
     const enemy = new PIXI.Container();
 
+    // Random emotion
+    const emotion = NEGATIVE_EMOTIONS[Math.floor(Math.random() * NEGATIVE_EMOTIONS.length)];
+    const color = EMOTION_COLORS[emotion];
+    enemy.color = color;       // save color so bullets use same theme
+
     // Enemy circle
     const body = new PIXI.Graphics();
-    body.beginFill(0xaa0000);
+    body.beginFill(color);
     body.drawCircle(0, 0, 22);
     body.endFill();
 
     // outer glow
     const glow = new PIXI.Graphics();
-    glow.beginFill(0xff4444, 0.3);
+    glow.beginFill(color, 0.3);
     glow.drawCircle(0, 0, 28);
     glow.endFill();
 
     enemy.addChild(glow, body);
-
-    // Random emotion
-    const emotion = NEGATIVE_EMOTIONS[Math.floor(Math.random() * NEGATIVE_EMOTIONS.length)];
+    
     const label = new PIXI.Text(emotion, {
         fill: "#ffffff",
         fontSize: 14,
@@ -213,11 +222,11 @@
             spawnEnemyBullet(enemy);
         }
     }, 1500);
-}
+    }
 
     function spawnEnemyBullet(enemy) {
         const bullet = new PIXI.Graphics();
-        bullet.beginFill(0xff0000);
+        bullet.beginFill(enemy.color);
         bullet.drawRect(-3, -10, 6, 20);
         bullet.endFill();
         bullet.x = enemy.x;
