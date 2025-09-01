@@ -154,10 +154,17 @@
 
     // Enemy circle
     const body = new PIXI.Graphics();
-    body.beginFill(0xff3333);
-    body.drawCircle(0, 0, 25);
+    body.beginFill(0xaa0000);
+    body.drawCircle(0, 0, 22);
     body.endFill();
-    enemy.addChild(body);
+
+    // outer glow
+    const glow = new PIXI.Graphics();
+    glow.beginFill(0xff4444, 0.3);
+    glow.drawCircle(0, 0, 28);
+    glow.endFill();
+
+    enemy.addChild(glow, body);
 
     // Random emotion
     const emotion = NEGATIVE_EMOTIONS[Math.floor(Math.random() * NEGATIVE_EMOTIONS.length)];
@@ -165,7 +172,15 @@
         fill: "#ffffff",
         fontSize: 14,
         fontWeight: "bold",
-        align: "center"
+        stroke: "#000000",
+        strokeThickness: 3,
+        dropShadow: true,
+        dropShadowColor: "#000000",
+        dropShadowBlur: 4,
+        dropShadowDistance: 2,
+        align: "center",
+        wordWrap: true,
+        wordWrapWidth: 40
     });
     label.anchor.set(0.5);
     enemy.addChild(label);
@@ -174,8 +189,23 @@
     enemy.x = Math.random() * (GAME_WIDTH - 50) + 25;
     enemy.y = 50;
     gameScene.addChild(enemy);
-
     enemies.push(enemy);
+
+    // Small pulse animation
+    // Define the pulsating function
+    const pulse = () => {
+        if (!enemy.parent) return; // guard if already removed
+        enemy.scale.x = 1 + 0.1 * Math.sin(app.ticker.lastTime / 200);
+        enemy.scale.y = 1 + 0.1 * Math.sin(app.ticker.lastTime / 200);
+    };
+  
+    // Attach it
+    app.ticker.add(pulse);
+
+    // When enemy is killed:
+    enemy.on('removed', () => {
+        app.ticker.remove(pulse); // cleanup
+    });
 
     // Shoot bullets every 1.5s
     enemy.shootInterval = setInterval(() => {
