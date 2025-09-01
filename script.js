@@ -4,9 +4,14 @@
     const GAME_HEIGHT = 600;
     const PLAYER_SPEED = 5;
     const PROJECTILE_SPEED = 8;
-    const ENEMY_SPEED = 3;
     const COLLECTIBLE_SPEED = 2;
     const TARGET_WORD = "SOLDIER";
+    const NEGATIVE_EMOTIONS = [
+        "Fear", "Anxiety", "Doubt", "Anger", "Despair",
+        "Worry", "Guilt", "Shame", "Regret", "Sadness",
+        "Panic", "Hopelessness", "Loneliness", "Insecurity",
+        "Frustration", "Envy", "Hate", "Exhaustion"
+    ];
 
     // App setup
     const app = new PIXI.Application({
@@ -53,6 +58,7 @@
     const projectiles = [];
     const enemies = [];
     const collectibles = [];
+    const enemyBullets = [];
 
     // UI
 
@@ -143,14 +149,51 @@
 
     // Spawn enemy
     function spawnEnemy() {
-        const enemy = new PIXI.Graphics();
-        enemy.beginFill(0xff3333);
-        enemy.drawCircle(0, 0, 20);
-        enemy.endFill();
-        enemy.x = Math.random() * (GAME_WIDTH - 40) + 20;
-        enemy.y = -20;
-        gameScene.addChild(enemy);
-        enemies.push(enemy);
+    // Create a container so enemy shape + text stick together
+    const enemy = new PIXI.Container();
+
+    // Enemy circle
+    const body = new PIXI.Graphics();
+    body.beginFill(0xff3333);
+    body.drawCircle(0, 0, 25);
+    body.endFill();
+    enemy.addChild(body);
+
+    // Random emotion
+    const emotion = NEGATIVE_EMOTIONS[Math.floor(Math.random() * NEGATIVE_EMOTIONS.length)];
+    const label = new PIXI.Text(emotion, {
+        fill: "#ffffff",
+        fontSize: 14,
+        fontWeight: "bold",
+        align: "center"
+    });
+    label.anchor.set(0.5);
+    enemy.addChild(label);
+
+    // Position enemy
+    enemy.x = Math.random() * (GAME_WIDTH - 50) + 25;
+    enemy.y = 50;
+    gameScene.addChild(enemy);
+
+    enemies.push(enemy);
+
+    // Shoot bullets every 1.5s
+    enemy.shootInterval = setInterval(() => {
+        if (!enemy.destroyed && !gameOver) {
+            spawnEnemyBullet(enemy);
+        }
+    }, 1500);
+}
+
+    function spawnEnemyBullet(enemy) {
+        const bullet = new PIXI.Graphics();
+        bullet.beginFill(0xff0000);
+        bullet.drawRect(-3, -10, 6, 20);
+        bullet.endFill();
+        bullet.x = enemy.x;
+        bullet.y = enemy.y + 20;
+        gameScene.addChild(bullet);
+        enemyBullets.push(bullet);
     }
 
     // Draw star
@@ -249,13 +292,6 @@
             const en = enemies[i];
             if (en.destroyed) continue;
 
-            en.y += ENEMY_SPEED;
-
-            // Collision with player
-            if (hitTest(player, en)) {
-                endGame(false);
-            }
-
             // Collision with projectiles
             for (let j = projectiles.length - 1; j >= 0; j--) {
                 const pr = projectiles[j];
@@ -264,6 +300,7 @@
                 if (hitTest(pr, en)) {
                     gameScene.removeChild(en);
                     en.destroy();
+                    clearInterval(en.shootInterval); // stop shooting
                     enemies.splice(i, 1);
 
                     gameScene.removeChild(pr);
@@ -277,6 +314,26 @@
                 gameScene.removeChild(en);
                 en.destroy();
                 enemies.splice(i, 1);
+            }
+        }
+
+        // Move enemy bullets
+        for (let i = enemyBullets.length - 1; i >= 0; i--) {
+            const b = enemyBullets[i];
+            if (b.destroyed) continue;
+
+            b.y += 5; // bullet speed
+
+            // Hit player
+            if (hitTest(player, b)) {
+                endGame(false);
+            }
+
+            // Off screen
+            if (b.y > GAME_HEIGHT + 20) {
+                gameScene.removeChild(b);
+                b.destroy();
+                enemyBullets.splice(i, 1);
             }
         }
 
@@ -320,8 +377,8 @@
     });
 
     // Spawning intervals
-    setInterval(spawnEnemy, 1500);
-    setInterval(spawnCollectible, 3000);
+    setInterval(spawnEnemy, 4000);
+    setInterval(spawnCollectible, 2000);
 
     // End game
     function endGame(win) {
@@ -403,12 +460,13 @@
         elapsedTime = 0;
         
         // Remove old objects
-        [...projectiles, ...enemies, ...collectibles].forEach(obj => {
+        [...projectiles, ...enemies, ...collectibles, ...enemyBullets].forEach(obj => {
             if (!obj.destroyed) obj.destroy();
         });
         projectiles.length = 0;
         enemies.length = 0;
         collectibles.length = 0;
+        enemyBullets.length = 0;
 
         // Reset player
         player.x = GAME_WIDTH / 2;
