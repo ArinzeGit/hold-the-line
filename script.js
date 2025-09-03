@@ -107,31 +107,42 @@
         const btnSize = 60;
         const padding = 20;
 
-        // Left Button
-        const leftBtn = new PIXI.Graphics()
-            .beginFill(0xffffff, 0.2)
-            .drawCircle(0, 0, btnSize)
-            .endFill();
-        leftBtn.x = GAME_WIDTH - padding - btnSize * 3;
-        leftBtn.y = GAME_HEIGHT - padding - btnSize;
-        leftBtn.interactive = true;
-        leftBtn.cursor = "pointer";
-        leftBtn.on("pointerdown", () => keys["ArrowLeft"] = true);
-        leftBtn.on("pointerup", () => keys["ArrowLeft"] = false);
-        leftBtn.on("pointerupoutside", () => keys["ArrowLeft"] = false);
+        const joystick = new PIXI.Graphics();
+        joystick.beginFill(0x444444);
+        joystick.drawCircle(0, 0, btnSize);
+        joystick.endFill();
+        joystick.x = GAME_WIDTH - padding - btnSize;
+        joystick.y = GAME_HEIGHT - padding - btnSize;
+        joystick.interactive = true;
+        joystick.buttonMode = true;
 
-        // Right Button
-        const rightBtn = new PIXI.Graphics()
-            .beginFill(0xffffff, 0.2)
-            .drawCircle(0, 0, btnSize)
-            .endFill();
-        rightBtn.x = GAME_WIDTH - padding - btnSize;
-        rightBtn.y = leftBtn.y;
-        rightBtn.interactive = true;
-        rightBtn.cursor = "pointer";
-        rightBtn.on("pointerdown", () => keys["ArrowRight"] = true);
-        rightBtn.on("pointerup", () => keys["ArrowRight"] = false);
-        rightBtn.on("pointerupoutside", () => keys["ArrowRight"] = false);
+        let startX = null;
+
+        joystick.on('pointerdown', (e) => {
+        startX = e.data.global.x;
+        });
+
+        joystick.on('pointermove', (e) => {
+        if (startX !== null) {
+            const currentX = e.data.global.x;
+            const diff = currentX - startX;
+
+            if (diff < -20) {
+                keys["ArrowLeft"] = true
+            } else if (diff > 20) {
+                keys["ArrowRight"] = true
+            } else {
+            keys["ArrowRight"] = false
+            keys["ArrowLeft"] = false
+            }
+        }
+        });
+
+        window.addEventListener('pointerup',  () => {
+        startX = null;
+        keys["ArrowRight"] = false
+        keys["ArrowLeft"] = false
+        });
 
         // Shoot Button (bottom-right corner)
         const shootBtn = new PIXI.Graphics()
@@ -146,7 +157,7 @@
         shootBtn.on("pointerup", () => keys["Space"] = false);
         shootBtn.on("pointerupoutside", () => keys["Space"] = false);
 
-        gameScene.addChild(leftBtn, rightBtn, shootBtn);
+        gameScene.addChild(joystick, shootBtn);
     }
 
     if ('ontouchstart' in window || navigator.maxTouchPoints) {
