@@ -111,7 +111,7 @@
         joystick.beginFill(0x444444);
         joystick.drawCircle(0, 0, btnSize);
         joystick.endFill();
-        joystick.x = GAME_WIDTH - padding - btnSize;
+        joystick.x = GAME_WIDTH - padding - 2*btnSize;
         joystick.y = GAME_HEIGHT - padding - btnSize;
         joystick.interactive = true;
         joystick.buttonMode = true;
