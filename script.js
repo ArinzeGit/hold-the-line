@@ -103,62 +103,92 @@
     window.addEventListener("keyup", e => keys[e.code] = false);
 
     // Create mobile controls if on a touch device
+
     function createMobileControls() {
-        const btnSize = 60;
-        const padding = 20;
+    const btnSize = 60;
+    const padding = 20;
 
-        const joystick = new PIXI.Graphics();
-        joystick.beginFill(0x444444);
-        joystick.drawCircle(0, 0, btnSize);
-        joystick.endFill();
-        joystick.x = GAME_WIDTH - padding - 2*btnSize;
-        joystick.y = GAME_HEIGHT - padding - btnSize;
-        joystick.interactive = true;
-        joystick.buttonMode = true;
+    // --- Joystick ---
+    const joystick = new PIXI.Container();
 
-        let startX = null;
+    // Outer circle (background)
+    const outer = new PIXI.Graphics()
+        .beginFill(0x222222, 0.4)
+        .lineStyle(4, 0xffffff, 0.3)
+        .drawCircle(0, 0, btnSize)
+        .endFill();
 
-        joystick.on('pointerdown', (e) => {
+    // Inner circle (handle)
+    const inner = new PIXI.Graphics()
+        .beginFill(0xaaaaaa, 0.6)
+        .drawCircle(0, 0, btnSize * 0.4)
+        .endFill();
+
+    joystick.addChild(outer, inner);
+    joystick.x = padding + btnSize;
+    joystick.y = GAME_HEIGHT - padding - btnSize;
+    joystick.interactive = true;
+
+    let startX = null;
+
+    joystick.on('pointerdown', (e) => {
         startX = e.data.global.x;
-        });
+        inner.scale.set(1.2); // feedback
+    });
 
-        joystick.on('pointermove', (e) => {
+    joystick.on('pointermove', (e) => {
         if (startX !== null) {
             const currentX = e.data.global.x;
             const diff = currentX - startX;
 
             if (diff < -20) {
-                keys["ArrowLeft"] = true
+                keys["ArrowLeft"] = true;
+                keys["ArrowRight"] = false;
             } else if (diff > 20) {
-                keys["ArrowRight"] = true
+                keys["ArrowRight"] = true;
+                keys["ArrowLeft"] = false;
             } else {
-            keys["ArrowRight"] = false
-            keys["ArrowLeft"] = false
+                keys["ArrowLeft"] = false;
+                keys["ArrowRight"] = false;
             }
         }
-        });
+    });
 
-        window.addEventListener('pointerup',  () => {
+    window.addEventListener('pointerup', () => {
         startX = null;
-        keys["ArrowRight"] = false
-        keys["ArrowLeft"] = false
-        });
+        inner.scale.set(1); // reset feedback
+        keys["ArrowRight"] = false;
+        keys["ArrowLeft"] = false;
+    });
 
-        // Shoot Button (bottom-right corner)
-        const shootBtn = new PIXI.Graphics()
-            .beginFill(0xff4444, 0.3) // red-ish so it’s easy to see
-            .drawCircle(0, 0, btnSize)
-            .endFill();
-        shootBtn.x = padding + btnSize;
-        shootBtn.y = GAME_HEIGHT - padding - btnSize;
-        shootBtn.interactive = true;
-        shootBtn.cursor = "pointer";
-        shootBtn.on("pointerdown", () => keys["Space"] = true);
-        shootBtn.on("pointerup", () => keys["Space"] = false);
-        shootBtn.on("pointerupoutside", () => keys["Space"] = false);
+    // --- Shoot Button ---
+    const shootBtn = new PIXI.Graphics()
+        .beginFill(0xff4444, 0.5)
+        .lineStyle(4, 0xffffff, 0.4)
+        .drawCircle(0, 0, btnSize)
+        .endFill();
 
-        gameScene.addChild(joystick, shootBtn);
-    }
+    shootBtn.x = GAME_WIDTH - padding - btnSize;
+    shootBtn.y = GAME_HEIGHT - padding - btnSize;
+    shootBtn.interactive = true;
+    shootBtn.cursor = "pointer";
+
+    shootBtn.on("pointerdown", () => {
+        keys["Space"] = true;
+        shootBtn.scale.set(1.2); // feedback
+    });
+    shootBtn.on("pointerup", () => {
+        keys["Space"] = false;
+        shootBtn.scale.set(1);
+    });
+    shootBtn.on("pointerupoutside", () => {
+        keys["Space"] = false;
+        shootBtn.scale.set(1);
+    });
+
+    gameScene.addChild(joystick, shootBtn);
+}
+
 
     if ('ontouchstart' in window || navigator.maxTouchPoints) {
         createMobileControls();
