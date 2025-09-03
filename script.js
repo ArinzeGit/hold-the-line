@@ -133,7 +133,7 @@
 
     joystick.on('pointerdown', (e) => {
         startX = e.data.global.x;
-        inner.scale.set(1.2); // feedback
+        inner.tint = 0x00ff66; // bright green when active
     });
 
     joystick.on('pointermove', (e) => {
@@ -141,25 +141,32 @@
             const currentX = e.data.global.x;
             const diff = currentX - startX;
 
+            // Limit inner handle offset so it doesn’t go too far out
+            const maxOffset = btnSize * 0.4;
+
             if (diff < -20) {
                 keys["ArrowLeft"] = true;
                 keys["ArrowRight"] = false;
+                inner.x = -maxOffset;  // move handle left
             } else if (diff > 20) {
                 keys["ArrowRight"] = true;
                 keys["ArrowLeft"] = false;
+                inner.x = maxOffset;   // move handle right
             } else {
                 keys["ArrowLeft"] = false;
                 keys["ArrowRight"] = false;
+                inner.x = 0;           // center handle
             }
         }
     });
 
     window.addEventListener('pointerup', () => {
-        startX = null;
-        inner.scale.set(1); // reset feedback
-        keys["ArrowRight"] = false;
-        keys["ArrowLeft"] = false;
-    });
+    startX = null;
+    inner.tint = 0xffffff; 
+    inner.x = 0; // reset handle to center
+    keys["ArrowRight"] = false;
+    keys["ArrowLeft"] = false;
+});
 
     // --- Shoot Button ---
     const shootBtn = new PIXI.Graphics()
