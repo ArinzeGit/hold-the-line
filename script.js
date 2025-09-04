@@ -111,23 +111,57 @@
     // --- Joystick ---
     const joystick = new PIXI.Container();
 
-    // Outer circle (background with subtle glow)
+    // Outer circle (background)
     const outer = new PIXI.Graphics()
-        .beginFill(0x000000, 0.25)
-        .lineStyle(4, 0x00ff66, 0.3)
+        .beginFill(0x222222, 0.6)
+        .lineStyle(4, 0xffffff, 0.4)
         .drawCircle(0, 0, btnSize)
         .endFill();
-    outer.filters = [new PIXI.BlurFilter(4)]; // soft glow effect
+        joystick.addChild(outer);
 
-
-
-    // Inner circle (handle)
-    const inner = new PIXI.Graphics()
-        .beginFill(0x00ff66, 0.8)
-        .drawCircle(0, 0, btnSize * 0.35)
+    // Direction glows (subtle wedges behind the knob)
+    const leftGlow = new PIXI.Graphics()
+        .beginFill(0x00ff66, 0.35)
+        .drawPolygon(
+            -btnSize * 1.3, 0,
+            -btnSize * 0.6, -btnSize * 0.6,
+            -btnSize * 0.6,  btnSize * 0.6
+        )
         .endFill();
 
-    joystick.addChild(outer, inner);
+    const rightGlow = new PIXI.Graphics()
+        .beginFill(0x00ff66, 0.35)
+        .drawPolygon(
+            btnSize * 1.3, 0,
+            btnSize * 0.6, -btnSize * 0.6,
+            btnSize * 0.6,  btnSize * 0.6
+        )
+        .endFill();
+        
+    leftGlow.visible = false;
+    rightGlow.visible = false;
+    joystick.addChild(leftGlow, rightGlow);
+
+    // Knob container so shadow + knob move together
+    const knob = new PIXI.Container();
+
+    /// Fake shadow (stronger offset + darker alpha)
+    const shadow = new PIXI.Graphics();
+    shadow.beginFill(0x000000, 0.5);
+    shadow.drawCircle(4, 6, btnSize * 0.45);
+    shadow.endFill();
+
+    // Knob face
+    const inner = new PIXI.Graphics()
+    .lineStyle(2, 0xffffff, 0.5)
+    .beginFill(0xaaaaaa, 1)
+    .drawCircle(0, 0, btnSize * 0.45)
+    .endFill();
+
+    knob.addChild(shadow, inner);
+    joystick.addChild(knob);
+
+
     joystick.x = padding + btnSize;
     joystick.y = GAME_HEIGHT - padding - btnSize;
     joystick.interactive = true;
@@ -144,33 +178,44 @@
         if (startX !== null) {
             const currentX = e.data.global.x;
             const diff = currentX - startX;
-
-            // Limit inner handle offset so it doesn’t go too far out
+            const deadZone = 20;
             const maxOffset = btnSize * 0.5;
 
-            if (diff < -20) {
+            if (diff < -deadZone) {
                 keys["ArrowLeft"] = true;
                 keys["ArrowRight"] = false;
-                inner.x = -maxOffset;  // move handle left
-            } else if (diff > 20) {
+                knob.x = -maxOffset;  // slide left
+                leftGlow.visible = true;     // glow left
+                rightGlow.visible = false;
+            } else if (diff > deadZone) {
                 keys["ArrowRight"] = true;
                 keys["ArrowLeft"] = false;
-                inner.x = maxOffset;   // move handle right
+                knob.x = maxOffset;   // slide right
+                leftGlow.visible = false;
+                rightGlow.visible = true;    // glow right
             } else {
                 keys["ArrowLeft"] = false;
                 keys["ArrowRight"] = false;
-                inner.x = 0;           // center handle
+                knob.x = 0;           // center handle
+                leftGlow.visible = false;
+                rightGlow.visible = false;
             }
         }
     });
 
-    window.addEventListener('pointerup', () => {
+    const release = () => {
         startX = null;
-        inner.tint = 0xffffff;
-        outer.scale.set(1); // reset scale
+        inner.tint = 0xffffff;     // back to neutral
+        knob.x = 0;
+        outer.scale.set(1); // back to normal size
+        leftGlow.visible = false;
+        rightGlow.visible = false;
         keys["ArrowRight"] = false;
         keys["ArrowLeft"] = false;
-    });
+    };
+    joystick.on('pointerup', release);
+    joystick.on('pointerupoutside', release);
+    window.addEventListener('pointerup', release);
 
     app.ticker.add(() => {
         if (startX === null && inner.x !== 0) {
