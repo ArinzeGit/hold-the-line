@@ -121,7 +121,7 @@
 
 
 
-    // Inner circle (handle with highlight)
+    // Inner circle (handle)
     const inner = new PIXI.Graphics()
         .beginFill(0x00ff66, 0.8)
         .drawCircle(0, 0, btnSize * 0.35)
