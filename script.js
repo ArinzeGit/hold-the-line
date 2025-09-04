@@ -111,17 +111,20 @@
     // --- Joystick ---
     const joystick = new PIXI.Container();
 
-    // Outer circle (background)
+    // Outer circle (background with subtle glow)
     const outer = new PIXI.Graphics()
-        .beginFill(0x222222, 0.4)
-        .lineStyle(4, 0xffffff, 0.3)
+        .beginFill(0x000000, 0.25)
+        .lineStyle(4, 0x00ff66, 0.3)
         .drawCircle(0, 0, btnSize)
         .endFill();
+    outer.filters = [new PIXI.BlurFilter(4)]; // soft glow effect
 
-    // Inner circle (handle)
+
+
+    // Inner circle (handle with highlight)
     const inner = new PIXI.Graphics()
-        .beginFill(0xaaaaaa, 0.6)
-        .drawCircle(0, 0, btnSize * 0.4)
+        .beginFill(0x00ff66, 0.8)
+        .drawCircle(0, 0, btnSize * 0.35)
         .endFill();
 
     joystick.addChild(outer, inner);
@@ -134,6 +137,7 @@
     joystick.on('pointerdown', (e) => {
         startX = e.data.global.x;
         inner.tint = 0x00ff66; // bright green when active
+        outer.scale.set(1.1); // slight scale up for feedback
     });
 
     joystick.on('pointermove', (e) => {
@@ -142,7 +146,7 @@
             const diff = currentX - startX;
 
             // Limit inner handle offset so it doesn’t go too far out
-            const maxOffset = btnSize * 0.4;
+            const maxOffset = btnSize * 0.5;
 
             if (diff < -20) {
                 keys["ArrowLeft"] = true;
@@ -161,12 +165,19 @@
     });
 
     window.addEventListener('pointerup', () => {
-    startX = null;
-    inner.tint = 0xffffff; 
-    inner.x = 0; // reset handle to center
-    keys["ArrowRight"] = false;
-    keys["ArrowLeft"] = false;
-});
+        startX = null;
+        inner.tint = 0xffffff;
+        outer.scale.set(1); // reset scale
+        keys["ArrowRight"] = false;
+        keys["ArrowLeft"] = false;
+    });
+
+    app.ticker.add(() => {
+        if (startX === null && inner.x !== 0) {
+            inner.x *= 0.8; // smooth easing back to center
+            if (Math.abs(inner.x) < 0.5) inner.x = 0;
+        }
+    });
 
     // --- Shoot Button ---
     const shootBtn = new PIXI.Graphics()
