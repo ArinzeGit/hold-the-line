@@ -83,15 +83,6 @@
     const uiScene = new PIXI.Container();
     app.stage.addChild(gameScene, uiScene);
 
-    // Player
-    const player = new PIXI.Graphics();
-    player.beginFill(0x00ff66);
-    player.drawRect(-20, -20, 40, 40); // placeholder
-    player.endFill();
-    player.x = GAME_WIDTH / 2;
-    player.y = GAME_HEIGHT - 50;
-    gameScene.addChild(player);
-
     // Arrays
     const projectiles = [];
     const enemies = [];
@@ -238,6 +229,15 @@
     if ('ontouchstart' in window || navigator.maxTouchPoints) {
         createMobileControls();
     }
+
+    // Player
+    const player = new PIXI.Graphics();
+    player.beginFill(0x00ff66);
+    player.drawRect(-20, -20, 40, 40); // placeholder
+    player.endFill();
+    player.x = GAME_WIDTH / 2;
+    player.y = GAME_HEIGHT - 50;
+    gameScene.addChild(player);
 
     // Spawn enemy
     function spawnEnemy() {
