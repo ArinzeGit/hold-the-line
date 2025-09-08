@@ -197,7 +197,7 @@
             }
 
             // Only use horizontal axis
-            const deadZone = 30;
+            const deadZone = 10;
             if (knob.x < -deadZone) {
                 keys["ArrowLeft"] = true;
                 keys["ArrowRight"] = false;
