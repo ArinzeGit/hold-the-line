@@ -135,7 +135,7 @@
     window.addEventListener("keyup", e => keys[e.code] = false);
 
     // Create mobile controls if on a touch device
-    const btnSize = 70;
+    const btnSize = 100;
     const padding = 20;
 
     function createButton(label, color, x, y, onPress, onRelease) {
