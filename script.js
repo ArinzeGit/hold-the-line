@@ -137,7 +137,7 @@
     // Create mobile controls if on a touch device
 
     function createMobileControls() {
-        const btnSize = 60;
+        const btnSize = 120;
         const padding = 20;
 
         // --- Joystick ---
@@ -197,7 +197,7 @@
             }
 
             // Only use horizontal axis
-            const deadZone = 10;
+            const deadZone = 30;
             if (knob.x < -deadZone) {
                 keys["ArrowLeft"] = true;
                 keys["ArrowRight"] = false;
