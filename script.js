@@ -135,114 +135,104 @@
     window.addEventListener("keyup", e => keys[e.code] = false);
 
     // Create mobile controls if on a touch device
+    const btnSize = 70;
+    const padding = 20;
+
+    function createButton(label, color, x, y, onPress, onRelease) {
+        
+        const btn = new PIXI.Container();
+
+        // Outer circle (main button)
+        const outer = new PIXI.Graphics()
+            .beginFill(color)
+            .drawCircle(0, 0, btnSize)
+            .endFill();
+
+        // Inner circle (gives depth / gradient illusion)
+        const inner = new PIXI.Graphics()
+            .beginFill(0xffffff, 0.08)
+            .drawCircle(0, 0, btnSize * 0.9)
+            .endFill();
+
+        // Glossy highlight
+        const gloss = new PIXI.Graphics()
+            .beginFill(0xffffff, 0.25)
+            .drawEllipse(0, -btnSize * 0.3, btnSize * 0.7, btnSize * 0.4)
+            .endFill();
+
+        // Drop shadow
+        const shadow = new PIXI.Graphics()
+            .beginFill(0x000000, 0.35)
+            .drawCircle(5, 5, btnSize)
+            .endFill();
+
+        // Label
+        const text = new PIXI.Text(label, {
+            fontSize: 34,
+            fill: 0xffffff,
+            fontWeight: "900",
+            stroke: 0x000000,
+            strokeThickness: 4
+        });
+        text.anchor.set(0.5);
+
+        btn.addChild(shadow, outer, inner, gloss, text);
+
+        btn.x = x;
+        btn.y = y;
+        btn.interactive = true;
+        btn.cursor = "pointer";
+
+        // 🔹 Helper: animate scale smoothly
+        function animateScale(target) {
+            btn.scale.x += (target - btn.scale.x) * 0.3;
+            btn.scale.y += (target - btn.scale.y) * 0.3;
+        }
+
+        let targetScale = 1;
+        PIXI.Ticker.shared.add(() => animateScale(targetScale));
+
+        // Button press feedback
+        btn.on("pointerdown", () => {
+            targetScale = 0.85;
+            gloss.alpha = 0.4;
+            onPress();
+        });
+        btn.on("pointerup", () => {
+            targetScale = 1;
+            gloss.alpha = 0.25;
+            onRelease();
+        });
+        btn.on("pointerupoutside", () => {
+            targetScale = 1;
+            gloss.alpha = 0.25;
+            onRelease();
+        });
+
+        return btn;
+    }
 
     function createMobileControls() {
-        const btnSize = 60;
-        const padding = 20;
+        // Left
+        const leftBtn = createButton("◀", 0x3A86FF, padding + btnSize, GAME_HEIGHT / 2,
+            () => keys["ArrowLeft"] = true,
+            () => keys["ArrowLeft"] = false
+        );
 
-        // --- Left Button ---
-        const leftBtn = new PIXI.Graphics()
-            .beginFill(0x4444ff, 0.5)
-            .lineStyle(4, 0xffffff, 0.4)
-            .drawCircle(0, 0, btnSize)
-            .endFill();
+        // Right
+        const rightBtn = createButton("▶", 0x06D6A0, padding * 2 + btnSize * 3, GAME_HEIGHT / 2,
+            () => keys["ArrowRight"] = true,
+            () => keys["ArrowRight"] = false
+        );
 
-        // Left arrow icon
-        const leftArrow = new PIXI.Text("◀", {
-            fontSize: 32,
-            fill: 0xffffff,
-            align: "center"
-        });
-        leftArrow.anchor.set(0.5);
-        leftBtn.addChild(leftArrow);
+        // Shoot
+        const shootBtn = createButton("●", 0xEF233C, GAME_WIDTH - padding - btnSize, GAME_HEIGHT / 2,
+            () => keys["Space"] = true,
+            () => keys["Space"] = false
+        );
 
-        leftBtn.x = padding + btnSize;
-        leftBtn.y = GAME_HEIGHT - padding - btnSize;
-        leftBtn.interactive = true;
-        leftBtn.cursor = "pointer";
-
-        leftBtn.on("pointerdown", () => {
-            keys["ArrowLeft"] = true;
-            leftBtn.scale.set(1.2);
-        });
-        leftBtn.on("pointerup", () => {
-            keys["ArrowLeft"] = false;
-            leftBtn.scale.set(1);
-        });
-        leftBtn.on("pointerupoutside", () => {
-            keys["ArrowLeft"] = false;
-            leftBtn.scale.set(1);
-        });
-
-        // --- Right Button ---
-        const rightBtn = new PIXI.Graphics()
-            .beginFill(0x44ff44, 0.5)
-            .lineStyle(4, 0xffffff, 0.4)
-            .drawCircle(0, 0, btnSize)
-            .endFill();
-
-        // Right arrow icon
-        const rightArrow = new PIXI.Text("▶", {
-            fontSize: 32,
-            fill: 0xffffff,
-            align: "center"
-        });
-        rightArrow.anchor.set(0.5);
-        rightBtn.addChild(rightArrow);
-
-        rightBtn.x = padding + btnSize * 3; // a bit to the right of leftBtn
-        rightBtn.y = GAME_HEIGHT - padding - btnSize;
-        rightBtn.interactive = true;
-        rightBtn.cursor = "pointer";
-
-        rightBtn.on("pointerdown", () => {
-            keys["ArrowRight"] = true;
-            rightBtn.scale.set(1.2);
-        });
-        rightBtn.on("pointerup", () => {
-            keys["ArrowRight"] = false;
-            rightBtn.scale.set(1);
-        });
-        rightBtn.on("pointerupoutside", () => {
-            keys["ArrowRight"] = false;
-            rightBtn.scale.set(1);
-        });
-
-        // --- Shoot Button ---
-        const shootBtn = new PIXI.Graphics()
-            .beginFill(0xff4444, 0.5)
-            .lineStyle(4, 0xffffff, 0.4)
-            .drawCircle(0, 0, btnSize)
-            .endFill();
-
-        const shootIcon = new PIXI.Text("●", {
-            fontSize: 32,
-            fill: 0xffffff,
-            align: "center"
-        });
-        shootIcon.anchor.set(0.5);
-        shootBtn.addChild(shootIcon);
-
-        shootBtn.x = GAME_WIDTH - padding - btnSize;
-        shootBtn.y = GAME_HEIGHT - padding - btnSize;
-        shootBtn.interactive = true;
-        shootBtn.cursor = "pointer";
-
-        shootBtn.on("pointerdown", () => {
-            keys["Space"] = true;
-            shootBtn.scale.set(1.2); // feedback
-        });
-        shootBtn.on("pointerup", () => {
-            keys["Space"] = false;
-            shootBtn.scale.set(1);
-        });
-        shootBtn.on("pointerupoutside", () => {
-            keys["Space"] = false;
-            shootBtn.scale.set(1);
-        });
-
-        // Add to scene
         gameScene.addChild(leftBtn, rightBtn, shootBtn);
+
     }
 
     if ('ontouchstart' in window || navigator.maxTouchPoints) {
