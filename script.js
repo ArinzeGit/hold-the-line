@@ -143,120 +143,80 @@
         // --- Joystick ---
         const joystick = new PIXI.Container();
 
-        // Outer circle (background)
+        // Outer circle
         const outer = new PIXI.Graphics()
             .beginFill(0x222222, 0.6)
             .lineStyle(4, 0xffffff, 0.4)
             .drawCircle(0, 0, btnSize)
             .endFill();
-            joystick.addChild(outer);
+        joystick.addChild(outer);
 
-        // Direction glows (subtle wedges behind the knob)
-        const leftGlow = new PIXI.Graphics()
-            .beginFill(0x00ff66, 0.35)
-            .drawPolygon(
-                -btnSize * 1.3, 0,
-                -btnSize * 0.6, -btnSize * 0.6,
-                -btnSize * 0.6,  btnSize * 0.6
-            )
+        // Knob
+        const knob = new PIXI.Graphics()
+            .beginFill(0xaaaaaa)
+            .lineStyle(2, 0xffffff, 0.5)
+            .drawCircle(0, 0, btnSize * 0.45)
             .endFill();
-
-        const rightGlow = new PIXI.Graphics()
-            .beginFill(0x00ff66, 0.35)
-            .drawPolygon(
-                btnSize * 1.3, 0,
-                btnSize * 0.6, -btnSize * 0.6,
-                btnSize * 0.6,  btnSize * 0.6
-            )
-            .endFill();
-            
-        leftGlow.visible = false;
-        rightGlow.visible = false;
-        joystick.addChild(leftGlow, rightGlow);
-
-        // Knob container so shadow + knob move together
-        const knob = new PIXI.Container();
-
-        /// Fake shadow (stronger offset + darker alpha)
-        const shadow = new PIXI.Graphics();
-        shadow.beginFill(0x000000, 0.5);
-        shadow.drawCircle(4, 6, btnSize * 0.45);
-        shadow.endFill();
-
-        // Knob face
-        const inner = new PIXI.Graphics()
-        .lineStyle(2, 0xffffff, 0.5)
-        .beginFill(0xaaaaaa, 1)
-        .drawCircle(0, 0, btnSize * 0.45)
-        .endFill();
-
-        knob.addChild(shadow, inner);
         joystick.addChild(knob);
-
 
         joystick.x = padding + btnSize;
         joystick.y = GAME_HEIGHT - padding - btnSize;
         joystick.interactive = true;
 
-        let startX = null;
+        let dragging = false;
 
-        joystick.on('pointerdown', (e) => {
-            const isPortrait = window.innerHeight > window.innerWidth;
-            startX = isPortrait? e.data.global.y : e.data.global.x;
-            inner.tint = 0x00ff66; // bright green when active
-            outer.scale.set(1.1); // slight scale up for feedback
+        joystick.on("pointerdown", (e) => {
+            dragging = true;
+            updateStick(e.data.global);
         });
 
-        joystick.on('pointermove', (e) => {
-            const isPortrait = window.innerHeight > window.innerWidth;
-            if (startX !== null) {
-                const currentX = isPortrait? e.data.global.y : e.data.global.x;
-                const diff = currentX - startX;
-                const deadZone = 20;
-                const maxOffset = btnSize * 0.5;
+        joystick.on("pointermove", (e) => {
+            if (dragging) updateStick(e.data.global);
+        });
 
-                if (diff < -deadZone) {
-                    keys["ArrowLeft"] = true;
-                    keys["ArrowRight"] = false;
-                    knob.x = -maxOffset;  // slide left
-                    leftGlow.visible = true;     // glow left
-                    rightGlow.visible = false;
-                } else if (diff > deadZone) {
-                    keys["ArrowRight"] = true;
-                    keys["ArrowLeft"] = false;
-                    knob.x = maxOffset;   // slide right
-                    leftGlow.visible = false;
-                    rightGlow.visible = true;    // glow right
-                } else {
-                    keys["ArrowLeft"] = false;
-                    keys["ArrowRight"] = false;
-                    knob.x = 0;           // center handle
-                    leftGlow.visible = false;
-                    rightGlow.visible = false;
-                }
+        joystick.on("pointerup", release);
+        joystick.on("pointerupoutside", release);
+        window.addEventListener("pointerup", release);
+
+        function updateStick(global) {
+            // Convert to local coords
+            const pos = joystick.toLocal(global);
+            const dx = pos.x;
+            const dy = pos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = btnSize * 0.6;
+
+            // Clamp knob to circle edge
+            if (dist > maxDist) {
+                const ratio = maxDist / dist;
+                knob.x = dx * ratio;
+                knob.y = dy * ratio;
+            } else {
+                knob.x = dx;
+                knob.y = dy;
             }
-        });
 
-        const release = () => {
-            startX = null;
-            inner.tint = 0xffffff;     // back to neutral
+            // Only use horizontal axis
+            const deadZone = 10;
+            if (knob.x < -deadZone) {
+                keys["ArrowLeft"] = true;
+                keys["ArrowRight"] = false;
+            } else if (knob.x > deadZone) {
+                keys["ArrowRight"] = true;
+                keys["ArrowLeft"] = false;
+            } else {
+                keys["ArrowLeft"] = false;
+                keys["ArrowRight"] = false;
+            }
+        }
+
+        function release() {
+            dragging = false;
             knob.x = 0;
-            outer.scale.set(1); // back to normal size
-            leftGlow.visible = false;
-            rightGlow.visible = false;
-            keys["ArrowRight"] = false;
+            knob.y = 0;
             keys["ArrowLeft"] = false;
-        };
-        joystick.on('pointerup', release);
-        joystick.on('pointerupoutside', release);
-        window.addEventListener('pointerup', release);
-
-        app.ticker.add(() => {
-            if (startX === null && inner.x !== 0) {
-                inner.x *= 0.8; // smooth easing back to center
-                if (Math.abs(inner.x) < 0.5) inner.x = 0;
-            }
-        });
+            keys["ArrowRight"] = false;
+        }
 
         // --- Shoot Button ---
         const shootBtn = new PIXI.Graphics()
