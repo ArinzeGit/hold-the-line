@@ -1,6 +1,6 @@
 (() => {
     // Config
-    const GAME_WIDTH = 800;
+    const GAME_WIDTH = 1000;
     const GAME_HEIGHT = 600;
     const PLAYER_SPEED = 5;
     const PROJECTILE_SPEED = 8;
@@ -29,16 +29,48 @@
     });
     document.getElementById("game-container").appendChild(app.view);
 
-    // Resize to fit screen
-    function resize() {
-        const scaleX = window.innerWidth / GAME_WIDTH;
-        const scaleY = window.innerHeight / GAME_HEIGHT;
-        const scale = Math.min(scaleX, scaleY);
-        app.view.style.transform = `scale(${scale})`;
-        app.view.style.transformOrigin = "top left";
+    function applyOrientationTransform() {
+        const isPortrait = window.innerHeight > window.innerWidth;
+        // Resize renderer to fill screen
+        app.renderer.resize(window.innerWidth, window.innerHeight);
+
+        if (isPortrait) {
+            // rotate stage +90deg clockwise so the game content appears landscape
+            app.stage.rotation = Math.PI / 2;
+
+            // After a +90° rotation about (0,0), x' = -y, y' = x
+            // to move everything into positive canvas coords, shift x by screen width
+            app.stage.position.set(window.innerWidth, 0);
+        } else {
+            // normal (landscape) — no rotation
+            app.stage.rotation = 0;
+            app.stage.position.set(0, 0);
+        }
     }
-    window.addEventListener("resize", resize);
+
+    applyOrientationTransform();
+    window.addEventListener("resize", applyOrientationTransform);
+    window.addEventListener("orientationchange", applyOrientationTransform);
+
+    function resize() {
+        const isPortrait = window.innerHeight > window.innerWidth;
+
+        // Swap width/height when portrait
+        const screenW = isPortrait ? window.innerHeight : window.innerWidth;
+        const screenH = isPortrait ? window.innerWidth : window.innerHeight;
+
+        // Compute scale
+        const scaleX = screenW / GAME_WIDTH;
+        const scaleY = screenH / GAME_HEIGHT;
+        const scale = Math.min(scaleX, scaleY);
+
+        // Scale stage
+        app.stage.scale.set(scale);
+    }
+
     resize();
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", resize);
 
     // Game state
     let collectedLetters = new Set();
@@ -105,152 +137,154 @@
     // Create mobile controls if on a touch device
 
     function createMobileControls() {
-    const btnSize = 60;
-    const padding = 20;
+        const btnSize = 60;
+        const padding = 20;
 
-    // --- Joystick ---
-    const joystick = new PIXI.Container();
+        // --- Joystick ---
+        const joystick = new PIXI.Container();
 
-    // Outer circle (background)
-    const outer = new PIXI.Graphics()
-        .beginFill(0x222222, 0.6)
-        .lineStyle(4, 0xffffff, 0.4)
-        .drawCircle(0, 0, btnSize)
-        .endFill();
-        joystick.addChild(outer);
+        // Outer circle (background)
+        const outer = new PIXI.Graphics()
+            .beginFill(0x222222, 0.6)
+            .lineStyle(4, 0xffffff, 0.4)
+            .drawCircle(0, 0, btnSize)
+            .endFill();
+            joystick.addChild(outer);
 
-    // Direction glows (subtle wedges behind the knob)
-    const leftGlow = new PIXI.Graphics()
-        .beginFill(0x00ff66, 0.35)
-        .drawPolygon(
-            -btnSize * 1.3, 0,
-            -btnSize * 0.6, -btnSize * 0.6,
-            -btnSize * 0.6,  btnSize * 0.6
-        )
-        .endFill();
+        // Direction glows (subtle wedges behind the knob)
+        const leftGlow = new PIXI.Graphics()
+            .beginFill(0x00ff66, 0.35)
+            .drawPolygon(
+                -btnSize * 1.3, 0,
+                -btnSize * 0.6, -btnSize * 0.6,
+                -btnSize * 0.6,  btnSize * 0.6
+            )
+            .endFill();
 
-    const rightGlow = new PIXI.Graphics()
-        .beginFill(0x00ff66, 0.35)
-        .drawPolygon(
-            btnSize * 1.3, 0,
-            btnSize * 0.6, -btnSize * 0.6,
-            btnSize * 0.6,  btnSize * 0.6
-        )
-        .endFill();
-        
-    leftGlow.visible = false;
-    rightGlow.visible = false;
-    joystick.addChild(leftGlow, rightGlow);
-
-    // Knob container so shadow + knob move together
-    const knob = new PIXI.Container();
-
-    /// Fake shadow (stronger offset + darker alpha)
-    const shadow = new PIXI.Graphics();
-    shadow.beginFill(0x000000, 0.5);
-    shadow.drawCircle(4, 6, btnSize * 0.45);
-    shadow.endFill();
-
-    // Knob face
-    const inner = new PIXI.Graphics()
-    .lineStyle(2, 0xffffff, 0.5)
-    .beginFill(0xaaaaaa, 1)
-    .drawCircle(0, 0, btnSize * 0.45)
-    .endFill();
-
-    knob.addChild(shadow, inner);
-    joystick.addChild(knob);
-
-
-    joystick.x = padding + btnSize;
-    joystick.y = GAME_HEIGHT - padding - btnSize;
-    joystick.interactive = true;
-
-    let startX = null;
-
-    joystick.on('pointerdown', (e) => {
-        startX = e.data.global.x;
-        inner.tint = 0x00ff66; // bright green when active
-        outer.scale.set(1.1); // slight scale up for feedback
-    });
-
-    joystick.on('pointermove', (e) => {
-        if (startX !== null) {
-            const currentX = e.data.global.x;
-            const diff = currentX - startX;
-            const deadZone = 20;
-            const maxOffset = btnSize * 0.5;
-
-            if (diff < -deadZone) {
-                keys["ArrowLeft"] = true;
-                keys["ArrowRight"] = false;
-                knob.x = -maxOffset;  // slide left
-                leftGlow.visible = true;     // glow left
-                rightGlow.visible = false;
-            } else if (diff > deadZone) {
-                keys["ArrowRight"] = true;
-                keys["ArrowLeft"] = false;
-                knob.x = maxOffset;   // slide right
-                leftGlow.visible = false;
-                rightGlow.visible = true;    // glow right
-            } else {
-                keys["ArrowLeft"] = false;
-                keys["ArrowRight"] = false;
-                knob.x = 0;           // center handle
-                leftGlow.visible = false;
-                rightGlow.visible = false;
-            }
-        }
-    });
-
-    const release = () => {
-        startX = null;
-        inner.tint = 0xffffff;     // back to neutral
-        knob.x = 0;
-        outer.scale.set(1); // back to normal size
+        const rightGlow = new PIXI.Graphics()
+            .beginFill(0x00ff66, 0.35)
+            .drawPolygon(
+                btnSize * 1.3, 0,
+                btnSize * 0.6, -btnSize * 0.6,
+                btnSize * 0.6,  btnSize * 0.6
+            )
+            .endFill();
+            
         leftGlow.visible = false;
         rightGlow.visible = false;
-        keys["ArrowRight"] = false;
-        keys["ArrowLeft"] = false;
-    };
-    joystick.on('pointerup', release);
-    joystick.on('pointerupoutside', release);
-    window.addEventListener('pointerup', release);
+        joystick.addChild(leftGlow, rightGlow);
 
-    app.ticker.add(() => {
-        if (startX === null && inner.x !== 0) {
-            inner.x *= 0.8; // smooth easing back to center
-            if (Math.abs(inner.x) < 0.5) inner.x = 0;
-        }
-    });
+        // Knob container so shadow + knob move together
+        const knob = new PIXI.Container();
 
-    // --- Shoot Button ---
-    const shootBtn = new PIXI.Graphics()
-        .beginFill(0xff4444, 0.5)
-        .lineStyle(4, 0xffffff, 0.4)
-        .drawCircle(0, 0, btnSize)
+        /// Fake shadow (stronger offset + darker alpha)
+        const shadow = new PIXI.Graphics();
+        shadow.beginFill(0x000000, 0.5);
+        shadow.drawCircle(4, 6, btnSize * 0.45);
+        shadow.endFill();
+
+        // Knob face
+        const inner = new PIXI.Graphics()
+        .lineStyle(2, 0xffffff, 0.5)
+        .beginFill(0xaaaaaa, 1)
+        .drawCircle(0, 0, btnSize * 0.45)
         .endFill();
 
-    shootBtn.x = GAME_WIDTH - padding - btnSize;
-    shootBtn.y = GAME_HEIGHT - padding - btnSize;
-    shootBtn.interactive = true;
-    shootBtn.cursor = "pointer";
+        knob.addChild(shadow, inner);
+        joystick.addChild(knob);
 
-    shootBtn.on("pointerdown", () => {
-        keys["Space"] = true;
-        shootBtn.scale.set(1.2); // feedback
-    });
-    shootBtn.on("pointerup", () => {
-        keys["Space"] = false;
-        shootBtn.scale.set(1);
-    });
-    shootBtn.on("pointerupoutside", () => {
-        keys["Space"] = false;
-        shootBtn.scale.set(1);
-    });
 
-    gameScene.addChild(joystick, shootBtn);
-}
+        joystick.x = padding + btnSize;
+        joystick.y = GAME_HEIGHT - padding - btnSize;
+        joystick.interactive = true;
+
+        let startX = null;
+
+        joystick.on('pointerdown', (e) => {
+            const isPortrait = window.innerHeight > window.innerWidth;
+            startX = isPortrait? e.data.global.y : e.data.global.x;
+            inner.tint = 0x00ff66; // bright green when active
+            outer.scale.set(1.1); // slight scale up for feedback
+        });
+
+        joystick.on('pointermove', (e) => {
+            const isPortrait = window.innerHeight > window.innerWidth;
+            if (startX !== null) {
+                const currentX = isPortrait? e.data.global.y : e.data.global.x;
+                const diff = currentX - startX;
+                const deadZone = 20;
+                const maxOffset = btnSize * 0.5;
+
+                if (diff < -deadZone) {
+                    keys["ArrowLeft"] = true;
+                    keys["ArrowRight"] = false;
+                    knob.x = -maxOffset;  // slide left
+                    leftGlow.visible = true;     // glow left
+                    rightGlow.visible = false;
+                } else if (diff > deadZone) {
+                    keys["ArrowRight"] = true;
+                    keys["ArrowLeft"] = false;
+                    knob.x = maxOffset;   // slide right
+                    leftGlow.visible = false;
+                    rightGlow.visible = true;    // glow right
+                } else {
+                    keys["ArrowLeft"] = false;
+                    keys["ArrowRight"] = false;
+                    knob.x = 0;           // center handle
+                    leftGlow.visible = false;
+                    rightGlow.visible = false;
+                }
+            }
+        });
+
+        const release = () => {
+            startX = null;
+            inner.tint = 0xffffff;     // back to neutral
+            knob.x = 0;
+            outer.scale.set(1); // back to normal size
+            leftGlow.visible = false;
+            rightGlow.visible = false;
+            keys["ArrowRight"] = false;
+            keys["ArrowLeft"] = false;
+        };
+        joystick.on('pointerup', release);
+        joystick.on('pointerupoutside', release);
+        window.addEventListener('pointerup', release);
+
+        app.ticker.add(() => {
+            if (startX === null && inner.x !== 0) {
+                inner.x *= 0.8; // smooth easing back to center
+                if (Math.abs(inner.x) < 0.5) inner.x = 0;
+            }
+        });
+
+        // --- Shoot Button ---
+        const shootBtn = new PIXI.Graphics()
+            .beginFill(0xff4444, 0.5)
+            .lineStyle(4, 0xffffff, 0.4)
+            .drawCircle(0, 0, btnSize)
+            .endFill();
+
+        shootBtn.x = GAME_WIDTH - padding - btnSize;
+        shootBtn.y = GAME_HEIGHT - padding - btnSize;
+        shootBtn.interactive = true;
+        shootBtn.cursor = "pointer";
+
+        shootBtn.on("pointerdown", () => {
+            keys["Space"] = true;
+            shootBtn.scale.set(1.2); // feedback
+        });
+        shootBtn.on("pointerup", () => {
+            keys["Space"] = false;
+            shootBtn.scale.set(1);
+        });
+        shootBtn.on("pointerupoutside", () => {
+            keys["Space"] = false;
+            shootBtn.scale.set(1);
+        });
+
+        gameScene.addChild(joystick, shootBtn);
+    }
 
 
     if ('ontouchstart' in window || navigator.maxTouchPoints) {
