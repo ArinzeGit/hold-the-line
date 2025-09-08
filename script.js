@@ -321,25 +321,6 @@
         enemyBullets.push(bullet);
     }
 
-    // Draw star
-    function drawStar(graphics, x, y, radius, points, innerRadius, color) {
-        graphics.beginFill(color);
-        graphics.moveTo(x + radius, y);
-
-        let angle = Math.PI / points;
-
-        for (let i = 0; i < 2 * points; i++) {
-            let r = i % 2 === 0 ? radius : innerRadius;
-            let currX = x + Math.cos(i * angle) * r;
-            let currY = y + Math.sin(i * angle) * r;
-            graphics.lineTo(currX, currY);
-        }
-
-        graphics.closePath();
-        graphics.endFill();
-    }
-
-
     // Spawn collectible
     function spawnCollectible() {
     const letter = TARGET_WORD[Math.floor(Math.random() * TARGET_WORD.length)];
