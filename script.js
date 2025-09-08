@@ -137,86 +137,76 @@
     // Create mobile controls if on a touch device
 
     function createMobileControls() {
-        const btnSize = 120;
+        const btnSize = 60;
         const padding = 20;
 
-        // --- Joystick ---
-        const joystick = new PIXI.Container();
-
-        // Outer circle
-        const outer = new PIXI.Graphics()
-            .beginFill(0x222222, 0.6)
+        // --- Left Button ---
+        const leftBtn = new PIXI.Graphics()
+            .beginFill(0x4444ff, 0.5)
             .lineStyle(4, 0xffffff, 0.4)
             .drawCircle(0, 0, btnSize)
             .endFill();
-        joystick.addChild(outer);
 
-        // Knob
-        const knob = new PIXI.Graphics()
-            .beginFill(0xaaaaaa)
-            .lineStyle(2, 0xffffff, 0.5)
-            .drawCircle(0, 0, btnSize * 0.45)
-            .endFill();
-        joystick.addChild(knob);
-
-        joystick.x = padding + btnSize;
-        joystick.y = GAME_HEIGHT - padding - btnSize;
-        joystick.interactive = true;
-
-        let dragging = false;
-
-        joystick.on("pointerdown", (e) => {
-            dragging = true;
-            updateStick(e.data.global);
+        // Left arrow icon
+        const leftArrow = new PIXI.Text("◀", {
+            fontSize: 32,
+            fill: 0xffffff,
+            align: "center"
         });
+        leftArrow.anchor.set(0.5);
+        leftBtn.addChild(leftArrow);
 
-        joystick.on("pointermove", (e) => {
-            if (dragging) updateStick(e.data.global);
+        leftBtn.x = padding + btnSize;
+        leftBtn.y = GAME_HEIGHT - padding - btnSize;
+        leftBtn.interactive = true;
+        leftBtn.cursor = "pointer";
+
+        leftBtn.on("pointerdown", () => {
+            keys["ArrowLeft"] = true;
+            leftBtn.scale.set(1.2);
         });
-
-        joystick.on("pointerup", release);
-        joystick.on("pointerupoutside", release);
-        window.addEventListener("pointerup", release);
-
-        function updateStick(global) {
-            // Convert to local coords
-            const pos = joystick.toLocal(global);
-            const dx = pos.x;
-            const dy = pos.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const maxDist = btnSize * 0.6;
-
-            // Clamp knob to circle edge
-            if (dist > maxDist) {
-                const ratio = maxDist / dist;
-                knob.x = dx * ratio;
-                knob.y = dy * ratio;
-            } else {
-                knob.x = dx;
-                knob.y = dy;
-            }
-
-            // Only use horizontal axis
-            const deadZone = 10;
-            if (knob.x < -deadZone) {
-                keys["ArrowLeft"] = true;
-                keys["ArrowRight"] = false;
-            } else if (knob.x > deadZone) {
-                keys["ArrowRight"] = true;
-                keys["ArrowLeft"] = false;
-            } else {
-                keys["ArrowLeft"] = false;
-                keys["ArrowRight"] = false;
-            }
-        }
-
-        function release() {
-            dragging = false;
-            knob.x = 0;
-            knob.y = 0;
+        leftBtn.on("pointerup", () => {
             keys["ArrowLeft"] = false;
+            leftBtn.scale.set(1);
+        });
+        leftBtn.on("pointerupoutside", () => {
+            keys["ArrowLeft"] = false;
+            leftBtn.scale.set(1);
+        });
+
+        // --- Right Button ---
+        const rightBtn = new PIXI.Graphics()
+            .beginFill(0x44ff44, 0.5)
+            .lineStyle(4, 0xffffff, 0.4)
+            .drawCircle(0, 0, btnSize)
+            .endFill();
+
+        // Right arrow icon
+        const rightArrow = new PIXI.Text("▶", {
+            fontSize: 32,
+            fill: 0xffffff,
+            align: "center"
+        });
+        rightArrow.anchor.set(0.5);
+        rightBtn.addChild(rightArrow);
+
+        rightBtn.x = padding + btnSize * 3; // a bit to the right of leftBtn
+        rightBtn.y = GAME_HEIGHT - padding - btnSize;
+        rightBtn.interactive = true;
+        rightBtn.cursor = "pointer";
+
+        rightBtn.on("pointerdown", () => {
+            keys["ArrowRight"] = true;
+            rightBtn.scale.set(1.2);
+        });
+        rightBtn.on("pointerup", () => {
             keys["ArrowRight"] = false;
-        }
+            rightBtn.scale.set(1);
+        });
+        rightBtn.on("pointerupoutside", () => {
+            keys["ArrowRight"] = false;
+            rightBtn.scale.set(1);
+        });
 
         // --- Shoot Button ---
         const shootBtn = new PIXI.Graphics()
@@ -224,6 +214,14 @@
             .lineStyle(4, 0xffffff, 0.4)
             .drawCircle(0, 0, btnSize)
             .endFill();
+
+        const shootIcon = new PIXI.Text("●", {
+            fontSize: 32,
+            fill: 0xffffff,
+            align: "center"
+        });
+        shootIcon.anchor.set(0.5);
+        shootBtn.addChild(shootIcon);
 
         shootBtn.x = GAME_WIDTH - padding - btnSize;
         shootBtn.y = GAME_HEIGHT - padding - btnSize;
@@ -243,9 +241,9 @@
             shootBtn.scale.set(1);
         });
 
-        gameScene.addChild(joystick, shootBtn);
+        // Add to scene
+        gameScene.addChild(leftBtn, rightBtn, shootBtn);
     }
-
 
     if ('ontouchstart' in window || navigator.maxTouchPoints) {
         createMobileControls();
