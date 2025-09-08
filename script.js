@@ -205,19 +205,19 @@
 
     function createMobileControls() {
         // Left
-        const leftBtn = createButton("◀", 0x3A86FF, padding + btnSize, GAME_HEIGHT / 2 + btnSize * 2,
+        const leftBtn = createButton("◀", 0x3A86FF, padding + btnSize, 3 * GAME_HEIGHT / 4,
             () => keys["ArrowLeft"] = true,
             () => keys["ArrowLeft"] = false
         );
 
         // Right
-        const rightBtn = createButton("▶", 0x06D6A0, padding * 2 + btnSize * 3, GAME_HEIGHT / 2 + btnSize * 2,
+        const rightBtn = createButton("▶", 0x06D6A0, padding * 2 + btnSize * 3, 3 * GAME_HEIGHT / 4,
             () => keys["ArrowRight"] = true,
             () => keys["ArrowRight"] = false
         );
 
         // Shoot
-        const shootBtn = createButton("●", 0xEF233C, GAME_WIDTH - padding - btnSize, GAME_HEIGHT / 2 + btnSize * 2,
+        const shootBtn = createButton("●", 0xEF233C, GAME_WIDTH - padding - btnSize, 3 * GAME_HEIGHT / 4,
             () => keys["Space"] = true,
             () => keys["Space"] = false
         );
