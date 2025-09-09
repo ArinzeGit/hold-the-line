@@ -137,49 +137,38 @@
     function createButton(label, color, x, y, onPress, onRelease) {
         const btn = new PIXI.Container();
 
-        // Outer circle (main button, semi-transparent)
+        // Outer outline circle
         const outer = new PIXI.Graphics()
-            .beginFill(color, 0.35) // lower alpha
+            .lineStyle(6, color, 0.8)   // thick border
+            .beginFill(0x000000, 0.15)  // faint transparent fill
             .drawCircle(0, 0, btnSize)
             .endFill();
 
-        // Inner circle (lighter transparency for depth)
-        const inner = new PIXI.Graphics()
-            .beginFill(0xffffff, 0.05)
-            .drawCircle(0, 0, btnSize * 0.9)
+        // Glow layer
+        const glow = new PIXI.Graphics()
+            .beginFill(color, 0.15)
+            .drawCircle(0, 0, btnSize * 1.2)
             .endFill();
+        glow.alpha = 0.4;
 
-        // Gloss highlight
-        const gloss = new PIXI.Graphics()
-            .beginFill(0xffffff, 0.15)
-            .drawEllipse(0, -btnSize * 0.3, btnSize * 0.7, btnSize * 0.4)
-            .endFill();
-
-        // Drop shadow (faint, so it doesn’t feel heavy)
-        const shadow = new PIXI.Graphics()
-            .beginFill(0x000000, 0.15)
-            .drawCircle(5, 5, btnSize)
-            .endFill();
-
-        // Label (slightly transparent too)
+        // Label
         const text = new PIXI.Text(label, {
-            fontSize: 34,
-            fill: 0xffffff,
+            fontSize: 40,
+            fill: color,
             fontWeight: "900",
             stroke: 0x000000,
-            strokeThickness: 3
+            strokeThickness: 4
         });
         text.anchor.set(0.5);
-        text.alpha = 0.8;
 
-        btn.addChild(shadow, outer, inner, gloss, text);
+        btn.addChild(glow, outer, text);
 
         btn.x = x;
         btn.y = y;
         btn.interactive = true;
         btn.cursor = "pointer";
 
-        // 🔹 Smooth press/release feedback
+        // Smooth press/release
         let targetScale = 1;
         function animateScale() {
             btn.scale.x += (targetScale - btn.scale.x) * 0.3;
@@ -189,17 +178,14 @@
 
         btn.on("pointerdown", () => {
             targetScale = 0.85;
-            gloss.alpha = 0.3;
             onPress();
         });
         btn.on("pointerup", () => {
             targetScale = 1;
-            gloss.alpha = 0.15;
             onRelease();
         });
         btn.on("pointerupoutside", () => {
             targetScale = 1;
-            gloss.alpha = 0.15;
             onRelease();
         });
 
