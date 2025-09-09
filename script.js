@@ -30,10 +30,12 @@
 
     function applyOrientationTransform() {
         const isPortrait = window.innerHeight > window.innerWidth;
+        const isMobile ='ontouchstart' in window || navigator.maxTouchPoints
+
         // Resize renderer to fill screen
         app.renderer.resize(window.innerWidth, window.innerHeight);
 
-        if (isPortrait) {
+        if (isPortrait && isMobile) {
             // rotate stage +90deg clockwise so the game content appears landscape
             app.stage.rotation = Math.PI / 2;
 
@@ -53,10 +55,11 @@
 
     function resize() {
         const isPortrait = window.innerHeight > window.innerWidth;
+        const isMobile ='ontouchstart' in window || navigator.maxTouchPoints
 
         // Swap width/height when portrait
-        const screenW = isPortrait ? window.innerHeight : window.innerWidth;
-        const screenH = isPortrait ? window.innerWidth : window.innerHeight;
+        const screenW = isPortrait && isMobile ? window.innerHeight : window.innerWidth;
+        const screenH = isPortrait && isMobile ? window.innerWidth : window.innerHeight;
 
         // Compute scale
         const scaleX = screenW / GAME_WIDTH;
@@ -121,7 +124,7 @@
         stroke: "#000000",
         strokeThickness: 4
     });
-    timerText.x = GAME_WIDTH - 120;
+    timerText.x = GAME_WIDTH - 130;
     timerText.y = 10;
     uiScene.addChild(timerText);
 
