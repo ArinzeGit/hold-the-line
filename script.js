@@ -132,7 +132,7 @@
 
     // Create mobile controls if on a touch device
     const btnSize = 100;
-    const padding = 20;
+    const padding = btnSize * 0.2;
 
     function createButton(label, color, x, y, onPress, onRelease) {
         const btn = new PIXI.Container();
@@ -194,19 +194,19 @@
 
     function createMobileControls() {
         // Left
-        const leftBtn = createButton("◀", 0x3A86FF, padding + btnSize, 3 * GAME_HEIGHT / 4,
+        const leftBtn = createButton("◀", 0x3A86FF, padding + btnSize, GAME_HEIGHT - btnSize - padding,
             () => keys["ArrowLeft"] = true,
             () => keys["ArrowLeft"] = false
         );
 
         // Right
-        const rightBtn = createButton("▶", 0x06D6A0, padding * 2 + btnSize * 3, 3 * GAME_HEIGHT / 4,
+        const rightBtn = createButton("▶", 0x06D6A0, padding * 2 + btnSize * 3, GAME_HEIGHT - btnSize - padding,
             () => keys["ArrowRight"] = true,
             () => keys["ArrowRight"] = false
         );
 
         // Shoot
-        const shootBtn = createButton("●", 0xEF233C, GAME_WIDTH - padding - btnSize, 3 * GAME_HEIGHT / 4,
+        const shootBtn = createButton("●", 0xEF233C, GAME_WIDTH - padding - btnSize, GAME_HEIGHT - btnSize - padding,
             () => keys["Space"] = true,
             () => keys["Space"] = false
         );
