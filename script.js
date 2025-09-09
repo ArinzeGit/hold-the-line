@@ -199,7 +199,7 @@
 
     function createMobileControls() {
         // Left
-        const leftBtn = createButton("◀", 0x3A86FF, padding + btnSize, GAME_HEIGHT - btnSize - padding,
+        const leftBtn = createButton("◀", 0x06D6A0, padding + btnSize, GAME_HEIGHT - btnSize - padding,
             () => keys["ArrowLeft"] = true,
             () => keys["ArrowLeft"] = false
         );
