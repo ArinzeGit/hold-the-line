@@ -7,15 +7,14 @@
     const COLLECTIBLE_SPEED = 2;
     const TARGET_WORD = "SOLDIER";
     const NEGATIVE_EMOTIONS = [
-        "Fear", "Anxiety", "Doubt", "Anger", "Despair", "Guilt"
+        "Fear", "Anxiety", "Anger", "Despair", "Guilt"
     ];
     const EMOTION_COLORS = {
-        "Fear": 0x4A6CFF,
-        "Anxiety": 0xFF6EC7,
-        "Doubt": 0x999999,
-        "Anger": 0xFF3333,
-        "Despair": 0x8A2BE2,
-        "Guilt": 0x00D1A0
+        "Fear": 0x4A6CFF,  //blue
+        "Anxiety": 0xFF6EC7, //pink
+        "Anger": 0xFF3333,  //red
+        "Despair": 0x8A2BE2,  //purple
+        "Guilt": 0x00D1A0  //green
     };
 
 
