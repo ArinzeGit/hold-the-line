@@ -12,7 +12,7 @@
     const EMOTION_COLORS = {
         "Fear": 0x4A6CFF,
         "Anxiety": 0xFF6EC7,
-        "Doubt": 0xFFD166,
+        "Doubt": 0x999999,
         "Anger": 0xFF3333,
         "Despair": 0x8A2BE2,
         "Guilt": 0x00D1A0
@@ -104,7 +104,10 @@
         const letterText = new PIXI.Text(char, {
             fill: "#555", // gray initially
             fontSize: 32,
-            fontWeight: "bold"
+            fontWeight: "bold",
+            fontFamily: "Verdana",
+            stroke: "#000000",
+            strokeThickness: 4
         });
         letterText.x = i * 30; // spacing between letters
         wordDisplay.addChild(letterText);
@@ -114,7 +117,10 @@
     // Timer display
     const timerText = new PIXI.Text(`Time: 0s`, {
         fill: "#fff",
-        fontSize: 24
+        fontSize: 24,
+        fontFamily: "Verdana",
+        stroke: "#000000",
+        strokeThickness: 4
     });
     timerText.x = GAME_WIDTH - 120;
     timerText.y = 10;
@@ -325,7 +331,10 @@
     const col = new PIXI.Text(letter, {
         fill: "#ffff00",
         fontSize: 32,
-        fontWeight: "bold"
+        fontWeight: "bold",
+        fontFamily: "Verdana",
+        stroke: "#000000",
+        strokeThickness: 4
     });
     col.anchor.set(0.5);
     col.x = Math.random() * (GAME_WIDTH - 40) + 20;
@@ -549,6 +558,7 @@
             });
             uiScene.addChild(link);
         }
+        setTimeout(resetGame, 3000); // This auto-restart is just for testing and will be removed later
     }
 
     // Reset game state
