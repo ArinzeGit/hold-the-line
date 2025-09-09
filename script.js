@@ -135,64 +135,64 @@
     const padding = btnSize * 0.2;
 
     function createButton(label, color, x, y, onPress, onRelease) {
-    const btn = new PIXI.Container();
+        const btn = new PIXI.Container();
 
-    // Glow background (soft halo)
-    const glow = new PIXI.Graphics()
-        .beginFill(color, 0.15)
-        .drawCircle(0, 0, btnSize * 1.2)
-        .endFill();
-    glow.alpha = 0.4;
-
-    // Outer outline
-    const outer = new PIXI.Graphics()
-        .lineStyle(4, color, 0.9)       // border
-        .beginFill(0x000000, 0.15)      // subtle transparency inside
-        .drawCircle(0, 0, btnSize)
-        .endFill();
-
-    // Label (cleaner + holographic stroke)
-    const text = new PIXI.Text(label, {
-        fontSize: 38,
-        fill: color,
-        fontWeight: "900",
-        stroke: 0x000000,
-        strokeThickness: 5
-    });
-    text.anchor.set(0.5);
-
-    btn.addChild(glow, outer, text);
-    btn.x = x;
-    btn.y = y;
-    btn.interactive = true;
-    btn.cursor = "pointer";
-
-    // Scale animation on press
-    let targetScale = 1;
-    function animateScale() {
-        btn.scale.x += (targetScale - btn.scale.x) * 0.3;
-        btn.scale.y += (targetScale - btn.scale.y) * 0.3;
-    }
-    PIXI.Ticker.shared.add(animateScale);
-
-    btn.on("pointerdown", () => {
-        targetScale = 0.85;  // shrink slightly
-        glow.alpha = 0.7;    // brighten glow
-        onPress();
-    });
-    btn.on("pointerup", () => {
-        targetScale = 1;
-        glow.alpha = 0.4;    // reset glow
-        onRelease();
-    });
-    btn.on("pointerupoutside", () => {
-        targetScale = 1;
+        // Glow background (soft halo)
+        const glow = new PIXI.Graphics()
+            .beginFill(color, 0.15)
+            .drawCircle(0, 0, btnSize * 1.2)
+            .endFill();
         glow.alpha = 0.4;
-        onRelease();
-    });
 
-    return btn;
-}
+        // Outer outline
+        const outer = new PIXI.Graphics()
+            .lineStyle(4, color, 0.9)       // border
+            .beginFill(0x000000, 0.15)      // subtle transparency inside
+            .drawCircle(0, 0, btnSize)
+            .endFill();
+
+        // Label (cleaner + holographic stroke)
+        const text = new PIXI.Text(label, {
+            fontSize: 38,
+            fill: color,
+            fontWeight: "900",
+            stroke: 0x000000,
+            strokeThickness: 5
+        });
+        text.anchor.set(0.5);
+
+        btn.addChild(glow, outer, text);
+        btn.x = x;
+        btn.y = y;
+        btn.interactive = true;
+        btn.cursor = "pointer";
+
+        // Scale animation on press
+        let targetScale = 1;
+        function animateScale() {
+            btn.scale.x += (targetScale - btn.scale.x) * 0.3;
+            btn.scale.y += (targetScale - btn.scale.y) * 0.3;
+        }
+        PIXI.Ticker.shared.add(animateScale);
+
+        btn.on("pointerdown", () => {
+            targetScale = 0.85;  // shrink slightly
+            glow.alpha = 0.7;    // brighten glow
+            onPress();
+        });
+        btn.on("pointerup", () => {
+            targetScale = 1;
+            glow.alpha = 0.4;    // reset glow
+            onRelease();
+        });
+        btn.on("pointerupoutside", () => {
+            targetScale = 1;
+            glow.alpha = 0.4;
+            onRelease();
+        });
+
+        return btn;
+    }
 
     function createMobileControls() {
         // Left
