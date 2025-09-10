@@ -548,7 +548,7 @@
             });
             uiScene.addChild(link);
         }
-        setTimeout(resetGame, 3000); // This auto-restart is just for testing and will be removed later
+        // setTimeout(resetGame, 3000); // This auto-restart is just for testing and will be removed later
     }
 
     // Reset game state
