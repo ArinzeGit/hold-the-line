@@ -544,7 +544,7 @@
             link.on("pointerover", () => link.style.fill = "#88ddff");
             link.on("pointerout", () => link.style.fill = "#44ccff");
             link.on("pointerdown", () => {
-                window.open("https://my-portfolio-website-silk-five.vercel.app/home", "_blank");
+                window.open("https://github.com/ArinzeGit", "_blank");
             });
             uiScene.addChild(link);
         }
