@@ -17,6 +17,14 @@
         "Guilt": 0x00D1A0  //green
     };
 
+    // Placeholder leaderboard
+    let leaderboard = [
+        { name: "Alice", score: 16 },
+        { name: "Bob", score: 20 },
+        { name: "Charlie", score: 35 },
+        { name: "Dana", score: 50 },
+        { name: "Eli", score: 60 },
+    ];
 
     // App setup
     const app = new PIXI.Application({
@@ -83,7 +91,9 @@
     // Containers
     const gameScene = new PIXI.Container();
     const uiScene = new PIXI.Container();
-    app.stage.addChild(gameScene, uiScene);
+    const gameOverScene = new PIXI.Container();
+    app.stage.addChild(gameScene, uiScene,gameOverScene);
+    gameOverScene.visible = false;
 
     // Arrays
     const projectiles = [];
@@ -235,73 +245,73 @@
 
     // Spawn enemy
     function spawnEnemy() {
-    // Create a container so enemy shape + text stick together
-    const enemy = new PIXI.Container();
+        // Create a container so enemy shape + text stick together
+        const enemy = new PIXI.Container();
 
-    // Random emotion
-    const emotion = NEGATIVE_EMOTIONS[Math.floor(Math.random() * NEGATIVE_EMOTIONS.length)];
-    const color = EMOTION_COLORS[emotion];
-    enemy.color = color;       // save color so bullets use same theme
+        // Random emotion
+        const emotion = NEGATIVE_EMOTIONS[Math.floor(Math.random() * NEGATIVE_EMOTIONS.length)];
+        const color = EMOTION_COLORS[emotion];
+        enemy.color = color;       // save color so bullets use same theme
 
-    // Enemy circle
-    const body = new PIXI.Graphics();
-    body.beginFill(color);
-    body.drawCircle(0, 0, 22);
-    body.endFill();
+        // Enemy circle
+        const body = new PIXI.Graphics();
+        body.beginFill(color);
+        body.drawCircle(0, 0, 22);
+        body.endFill();
 
-    // outer glow
-    const glow = new PIXI.Graphics();
-    glow.beginFill(color, 0.3);
-    glow.drawCircle(0, 0, 28);
-    glow.endFill();
+        // outer glow
+        const glow = new PIXI.Graphics();
+        glow.beginFill(color, 0.3);
+        glow.drawCircle(0, 0, 28);
+        glow.endFill();
 
-    enemy.addChild(glow, body);
+        enemy.addChild(glow, body);
+        
+        const label = new PIXI.Text(emotion, {
+            fill: "#ffffff",
+            fontSize: 14,
+            fontWeight: "bold",
+            stroke: "#000000",
+            strokeThickness: 3,
+            dropShadow: true,
+            dropShadowColor: "#000000",
+            dropShadowBlur: 4,
+            dropShadowDistance: 2,
+            align: "center",
+            wordWrap: true,
+            wordWrapWidth: 40
+        });
+        label.anchor.set(0.5);
+        enemy.addChild(label);
+
+        // Position enemy
+        enemy.x = Math.random() * (GAME_WIDTH - 50) + 25;
+        enemy.y = 50;
+        gameScene.addChild(enemy);
+        enemies.push(enemy);
+
+        // Small pulse animation
+        // Define the pulsating function
+        const pulse = () => {
+            if (!enemy.parent) return; // guard if already removed
+            enemy.scale.x = 1 + 0.1 * Math.sin(app.ticker.lastTime / 200);
+            enemy.scale.y = 1 + 0.1 * Math.sin(app.ticker.lastTime / 200);
+        };
     
-    const label = new PIXI.Text(emotion, {
-        fill: "#ffffff",
-        fontSize: 14,
-        fontWeight: "bold",
-        stroke: "#000000",
-        strokeThickness: 3,
-        dropShadow: true,
-        dropShadowColor: "#000000",
-        dropShadowBlur: 4,
-        dropShadowDistance: 2,
-        align: "center",
-        wordWrap: true,
-        wordWrapWidth: 40
-    });
-    label.anchor.set(0.5);
-    enemy.addChild(label);
+        // Attach it
+        app.ticker.add(pulse);
 
-    // Position enemy
-    enemy.x = Math.random() * (GAME_WIDTH - 50) + 25;
-    enemy.y = 50;
-    gameScene.addChild(enemy);
-    enemies.push(enemy);
+        // When enemy is killed:
+        enemy.on('removed', () => {
+            app.ticker.remove(pulse); // cleanup
+        });
 
-    // Small pulse animation
-    // Define the pulsating function
-    const pulse = () => {
-        if (!enemy.parent) return; // guard if already removed
-        enemy.scale.x = 1 + 0.1 * Math.sin(app.ticker.lastTime / 200);
-        enemy.scale.y = 1 + 0.1 * Math.sin(app.ticker.lastTime / 200);
-    };
-  
-    // Attach it
-    app.ticker.add(pulse);
-
-    // When enemy is killed:
-    enemy.on('removed', () => {
-        app.ticker.remove(pulse); // cleanup
-    });
-
-    // Shoot bullets every 1.5s
-    enemy.shootInterval = setInterval(() => {
-        if (!enemy.destroyed && !gameOver) {
-            spawnEnemyBullet(enemy);
-        }
-    }, 1500);
+        // Shoot bullets every 1.5s
+        enemy.shootInterval = setInterval(() => {
+            if (!enemy.destroyed && !gameOver) {
+                spawnEnemyBullet(enemy);
+            }
+        }, 1500);
     }
 
     function spawnEnemyBullet(enemy) {
@@ -487,17 +497,138 @@
     function endGame(win) {
         gameOver = true;
         gameScene.visible = false;
-        uiScene.removeChild(timerText);
+        gameOverScene.removeChildren();
+        gameOverScene.visible = true;
+
+        //Win or Lose message
         const msg = win ? "Mission Complete!" : "Mission Failed";
-        const winText = new PIXI.Text(msg, {
+        const resultText = new PIXI.Text(msg, {
             fill: win ? "#00ff66" : "#ff3333",
             fontSize: 48,
             fontWeight: "bold"
         });
-        winText.anchor.set(0.5);
-        winText.x = GAME_WIDTH / 2;
-        winText.y = GAME_HEIGHT / 2 - 80;
-        uiScene.addChild(winText);
+        resultText.anchor.set(0.5);
+        resultText.x = GAME_WIDTH / 2;
+        resultText.y = 80;
+        gameOverScene.addChild(resultText);
+
+        // Player score
+        let score = 9999; // default high score
+        if (win) {score = elapsedTime;}
+        const scoreText = new PIXI.Text(`Your Time: ${score}s`, {
+            fill: "#ffffff",
+            fontSize: 28,
+            fontWeight: "bold"
+        });
+        scoreText.anchor.set(0.5);
+        scoreText.x = GAME_WIDTH / 2;
+        scoreText.y = 140;
+        if (win)gameOverScene.addChild(scoreText);
+
+        // --- Leaderboard update ---
+        const leaderboardContainer = new PIXI.Container();
+        gameOverScene.addChild(leaderboardContainer);
+
+        const worstEntry = leaderboard[leaderboard.length - 1];
+        let qualifies = score < worstEntry.score;
+        if (qualifies) {
+            // Insert placeholder until we collect name
+            leaderboard.push({ name: "???", score });
+            leaderboard.sort((a, b) => a.score - b.score);
+            leaderboard = leaderboard.slice(0, 5);
+        }
+
+        // Leaderboard title
+        const lbTitle = new PIXI.Text("🏆 Top 5 Soldiers", {
+            fill: "#ffff00",
+            fontSize: 32,
+            fontWeight: "bold"
+        });
+        lbTitle.anchor.set(0.5);
+        lbTitle.x = GAME_WIDTH / 2;
+        lbTitle.y = 200;
+        gameOverScene.addChild(lbTitle);
+
+        // Leaderboard list
+        leaderboardContainer.removeChildren().forEach(c => c.destroy()); // cleanup
+        leaderboard.forEach((entry, i) => {
+            const entryText = new PIXI.Text(
+                `${i + 1}. ${entry.name} - ${entry.score}s`,
+                { fill: "#ffffff", fontSize: 24 }
+            );
+            entryText.anchor.set(0.5);
+            entryText.x = GAME_WIDTH / 2;
+            entryText.y = 240 + i * 30;
+            leaderboardContainer.addChild(entryText);
+        });
+
+        // If qualified → ask for name
+        if (qualifies) {
+            const namePrompt = new PIXI.Text("Enter your name:", {
+                fill: "#ffffff",
+                fontSize: 22
+            });
+            namePrompt.anchor.set(0.5);
+            namePrompt.x = GAME_WIDTH / 2;
+            namePrompt.y = 420;
+            gameOverScene.addChild(namePrompt);
+
+            // Use HTML input overlayed on canvas
+            const input = document.createElement("input");
+            input.type = "text";
+            input.placeholder = "Your name";
+            input.style.position = "absolute";
+            input.style.left = (app.view.offsetLeft + GAME_WIDTH / 2 - 80) + "px";
+            input.style.top = (app.view.offsetTop + 440) + "px";
+            input.style.fontSize = "20px";
+            document.body.appendChild(input);
+            input.focus();
+
+            input.addEventListener("keydown", e => {
+                if (e.key === "Enter" && input.value.trim()) {
+                    // Replace the ??? entry with the player's name
+                    leaderboard = leaderboard.map(entry =>
+                        entry.name === "???" ? { name: input.value.trim(), score: entry.score } : entry
+                    );
+                    document.body.removeChild(input);
+                    namePrompt.text = "Saved!";
+
+                    // Redraw leaderboard
+                    leaderboardContainer.removeChildren().forEach(c => c.destroy());
+                    leaderboard.forEach((entry, i) => {
+                        const entryText = new PIXI.Text(
+                            `${i + 1}. ${entry.name} - ${entry.score}s`,
+                            { fill: "#ffffff", fontSize: 24 }
+                        );
+                        entryText.anchor.set(0.5);
+                        entryText.x = GAME_WIDTH / 2;
+                        entryText.y = 240 + i * 30;
+                        leaderboardContainer.addChild(entryText);
+                    });
+                }
+            });
+        }
+
+
+
+        // Album link
+        const link = new PIXI.Text("🎵 Listen to 'SOLDIER'", {
+            fill: "#44ccff",
+            fontSize: 28,
+            fontWeight: "bold"
+        });
+        link.anchor.set(0.5);
+        link.x = GAME_WIDTH / 2;
+        link.y = GAME_HEIGHT / 2 + 110;
+        link.interactive = true;
+        link.buttonMode = true;
+        link.cursor = "pointer";
+        link.on("pointerover", () => link.style.fill = "#88ddff");
+        link.on("pointerout", () => link.style.fill = "#44ccff");
+        link.on("pointerdown", () => {
+            window.open("https://github.com/ArinzeGit", "_blank");
+        });
+        gameOverScene.addChild(link);
 
         // Play Again button
         const playAgain = new PIXI.Text("▶ Play Again", {
@@ -507,54 +638,22 @@
         });
         playAgain.anchor.set(0.5);
         playAgain.x = GAME_WIDTH / 2;
-        playAgain.y = GAME_HEIGHT / 2;
+        playAgain.y = GAME_HEIGHT - 80;
         playAgain.interactive = true;
         playAgain.buttonMode = true;
         playAgain.cursor = "pointer";
-
         playAgain.on("pointerover", () => playAgain.style.fill = "#ffff66");
         playAgain.on("pointerout", () => playAgain.style.fill = "#ffffff");
         playAgain.on("pointerdown", resetGame);
+        gameOverScene.addChild(playAgain);
 
-        uiScene.addChild(playAgain);
-
-        // If player won:
-        if (win) {
-            const timeResult = new PIXI.Text(`⏱ Time: ${elapsedTime}s`, {
-                fill: "#ffffff",
-                fontSize: 28,
-                fontWeight: "bold"
-            });
-            timeResult.anchor.set(0.5);
-            timeResult.x = GAME_WIDTH / 2;
-            timeResult.y = GAME_HEIGHT / 2 + 60;
-            uiScene.addChild(timeResult);
-
-            const link = new PIXI.Text("🎵 Listen to 'SOLDIER'", {
-                fill: "#44ccff",
-                fontSize: 28,
-                fontWeight: "bold"
-            });
-            link.anchor.set(0.5);
-            link.x = GAME_WIDTH / 2;
-            link.y = GAME_HEIGHT / 2 + 110;
-            link.interactive = true;
-            link.buttonMode = true;
-            link.cursor = "pointer";
-            link.on("pointerover", () => link.style.fill = "#88ddff");
-            link.on("pointerout", () => link.style.fill = "#44ccff");
-            link.on("pointerdown", () => {
-                window.open("https://github.com/ArinzeGit", "_blank");
-            });
-            uiScene.addChild(link);
-        }
         // setTimeout(resetGame, 3000); // This auto-restart is just for testing and will be removed later
     }
 
     // Reset game state
     function resetGame() {
-        // Clear UI
-        uiScene.removeChildren();
+        gameOverScene.visible = false;
+        gameScene.visible = true;
 
         // Reset variables
         collectedLetters.clear();
@@ -581,9 +680,8 @@
             letter.style.fill = "#555"; 
         });
 
-        // Show scene again
-        gameScene.visible = true;
-        uiScene.addChild(wordDisplay, timerText);
+        // Clear any existing input boxes
+        document.querySelectorAll("input").forEach(input => document.body.removeChild(input));
     }
 
     // Start the game
