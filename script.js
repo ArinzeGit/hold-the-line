@@ -19,11 +19,11 @@
 
     // Placeholder leaderboard
     let leaderboard = [
-        { name: "Alice", score: 43 },
-        { name: "Bob", score: 42 },
-        { name: "Charlie", score: 39 },
-        { name: "Dana", score: 35 },
-        { name: "Eli", score: 31 },
+        { name: "Alice", score: 41 },
+        { name: "Bob", score: 37 },
+        { name: "Charlie", score: 33 },
+        { name: "Dana", score: 28 },
+        { name: "Eli", score: 23 },
     ];
 
     // App setup
