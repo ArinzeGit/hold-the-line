@@ -19,11 +19,11 @@
 
     // Placeholder leaderboard
     let leaderboard = [
-        { name: "Alice", score: 16 },
-        { name: "Bob", score: 20 },
-        { name: "Charlie", score: 35 },
-        { name: "Dana", score: 50 },
-        { name: "Eli", score: 60 },
+        { name: "Alice", score: 43 },
+        { name: "Bob", score: 42 },
+        { name: "Charlie", score: 39 },
+        { name: "Dana", score: 35 },
+        { name: "Eli", score: 31 },
     ];
 
     // App setup
@@ -127,14 +127,14 @@
     }
 
     // Timer display
-    const timerText = new PIXI.Text(`Time: 0s`, {
+    const timerText = new PIXI.Text(`Time left: 60s`, {
         fill: "#fff",
         fontSize: 24,
         fontFamily: "Verdana",
         stroke: "#000000",
         strokeThickness: 4
     });
-    timerText.x = GAME_WIDTH - 130;
+    timerText.x = GAME_WIDTH - 200;
     timerText.y = 10;
     uiScene.addChild(timerText);
 
@@ -372,8 +372,13 @@
 
         // Update timer
         elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-        timerText.text = `Time: ${elapsedTime}s`;
-
+        timerText.text = `Time left: ${60 - elapsedTime}s`;
+        if (elapsedTime >= 60) {
+            timerText.text = `Time up!`;
+            endGame(false);
+            return;
+        }
+ 
         // Move player
         if (keys["ArrowLeft"] || keys["KeyA"]) player.x -= PLAYER_SPEED;
         if (keys["ArrowRight"] || keys["KeyD"]) player.x += PLAYER_SPEED;
@@ -439,6 +444,7 @@
 
             // Hit player
             if (hitTest(player, b)) {
+                // endGame(true); // For testing win scenario. Normally would be:
                 endGame(false);
             }
 
@@ -490,17 +496,83 @@
     });
 
     // Spawning intervals
-    setInterval(spawnEnemy, 4000);
-    setInterval(spawnCollectible, 2000);
+    let enemySpawnInterval = null;
+    let collectibleSpawnInterval = null;
+
+    function startSpawning() {
+        // clear any old intervals before starting new
+        stopSpawning();
+
+        enemySpawnInterval = setInterval(spawnEnemy, 4000);
+        collectibleSpawnInterval = setInterval(spawnCollectible, 2000);
+    }
+
+    function stopSpawning() {
+        if (enemySpawnInterval) {
+            clearInterval(enemySpawnInterval);
+            enemySpawnInterval = null;
+        }
+        if (collectibleSpawnInterval) {
+            clearInterval(collectibleSpawnInterval);
+            collectibleSpawnInterval = null;
+        }
+    }
+
+    // Initial spawn
+    startSpawning();
+
+    // Leaderboard input handling
+    let activeInput = null;
+    let saveButton = null;
+    let inputRowX = 0, inputRowY = 0, inputRowWidth = 0;
+    let inputLeaderboardContainer = null;
+    // Function to position input and save button over the correct leaderboard row
+    function positionLeaderboardInputAndSaveBtn() {
+        if (!activeInput) return;
+
+        const canvasRect = app.view.getBoundingClientRect();
+
+        // Convert local coords to global
+        const globalInputPosition = inputLeaderboardContainer.toGlobal(new PIXI.Point(inputRowX, inputRowY));
+        const globalInputEndPosition = inputLeaderboardContainer.toGlobal(new PIXI.Point(inputRowX + inputRowWidth, inputRowY));
+
+        // Screen width for this row
+        const screenWidth = globalInputEndPosition.x - globalInputPosition.x;
+
+        // Stage scale
+        const scale = app.stage.scale.x;
+
+        // Apply positioning + scaling
+        activeInput.style.left = canvasRect.left + globalInputPosition.x * 1.07 + "px"; // *1.07 offset to align with text
+        activeInput.style.top = canvasRect.top + globalInputPosition.y + "px";
+        activeInput.style.transform = "translateY(-50%)"; // vertical centering
+        activeInput.style.width = (screenWidth * 0.75) + "px"; // *0.75 to leave room for score
+        activeInput.style.fontSize = `${24 * scale}px`;
+        saveButton.style.left = canvasRect.left + globalInputEndPosition.x * 1.02 + "px";
+        saveButton.style.top = canvasRect.top + globalInputPosition.y + "px";
+        saveButton.style.transform = "translateY(-50%)"; // vertical centering
+        saveButton.style.fontSize = `${16 * scale}px`;
+    }
+
+    // Keep input and button synced after resize/orientation
+    window.addEventListener("resize", () => {
+        resize();
+        positionLeaderboardInputAndSaveBtn();
+    });
+    window.addEventListener("orientationchange", () => {
+        resize();
+        positionLeaderboardInputAndSaveBtn();
+    });
 
     // End game
     function endGame(win) {
+        stopSpawning();
         gameOver = true;
         gameScene.visible = false;
         gameOverScene.removeChildren();
         gameOverScene.visible = true;
 
-        //Win or Lose message
+        // Mission Complete / Failed
         const msg = win ? "Mission Complete!" : "Mission Failed";
         const resultText = new PIXI.Text(msg, {
             fill: win ? "#00ff66" : "#ff3333",
@@ -512,31 +584,39 @@
         resultText.y = 80;
         gameOverScene.addChild(resultText);
 
-        // Player score
-        let score = 9999; // default high score
-        if (win) {score = elapsedTime;}
-        const scoreText = new PIXI.Text(`Your Time: ${score}s`, {
+        // Calculate score
+        let score = 0; // default score
+        if (win) { score = 60 - elapsedTime; }
+
+        // Label (always white)
+        const labelText = new PIXI.Text("Your score:", {
             fill: "#ffffff",
             fontSize: 28,
             fontWeight: "bold"
         });
-        scoreText.anchor.set(0.5);
-        scoreText.x = GAME_WIDTH / 2;
-        scoreText.y = 140;
-        if (win)gameOverScene.addChild(scoreText);
 
-        // --- Leaderboard update ---
-        const leaderboardContainer = new PIXI.Container();
-        gameOverScene.addChild(leaderboardContainer);
+        // Value (green/red)
+        const valueText = new PIXI.Text(`${score}`, {
+            fill: "#00ff66",
+            fontSize: 28,
+            fontWeight: "bold"
+        });
 
-        const worstEntry = leaderboard[leaderboard.length - 1];
-        let qualifies = score < worstEntry.score;
-        if (qualifies) {
-            // Insert placeholder until we collect name
-            leaderboard.push({ name: "???", score });
-            leaderboard.sort((a, b) => a.score - b.score);
-            leaderboard = leaderboard.slice(0, 5);
-        }
+        // Compute total width (with small spacing)
+        const spacing = 10;
+        const totalWidth = labelText.width + spacing + valueText.width;
+
+        // Center the whole block
+        const startX = (GAME_WIDTH - totalWidth) / 2;
+        const y = 130;
+
+        labelText.x = startX;
+        labelText.y = y;
+
+        valueText.x = startX + labelText.width + spacing;
+        valueText.y = y;
+
+        gameOverScene.addChild(labelText, valueText);
 
         // Leaderboard title
         const lbTitle = new PIXI.Text("🏆 Top 5 Soldiers", {
@@ -546,70 +626,170 @@
         });
         lbTitle.anchor.set(0.5);
         lbTitle.x = GAME_WIDTH / 2;
-        lbTitle.y = 200;
+        lbTitle.y = 210;
         gameOverScene.addChild(lbTitle);
 
-        // Leaderboard list
-        leaderboardContainer.removeChildren().forEach(c => c.destroy()); // cleanup
+        // Leaderboard
+        const leaderboardContainer = new PIXI.Container();
+        gameOverScene.addChild(leaderboardContainer);
+
+        // Check if player qualifies for leaderboard
+        const worstEntry = leaderboard[leaderboard.length - 1];
+        let qualifies = score > worstEntry.score;
+        if (qualifies) {
+            // Insert placeholder with a marker until we collect name
+            leaderboard.push({ name: "???", score, pending: true });
+            leaderboard.sort((a, b) => b.score - a.score);
+            leaderboard = leaderboard.slice(0, 5);
+        }
+
+        // Clear previous entries
+        leaderboardContainer.removeChildren().forEach(c => c.destroy());
+
+         // Set a fixed row width (so scores align neatly)
+        const rowWidth = 255;
+
+        // Draw each entry
+        let leaderboardYStart = 250;
         leaderboard.forEach((entry, i) => {
-            const entryText = new PIXI.Text(
-                `${i + 1}. ${entry.name} - ${entry.score}s`,
+            const yPos = leaderboardYStart + i * 30;
+
+            // Row container
+            const row = new PIXI.Container();
+            row.y = yPos;
+
+            // Rank + name (white, left aligned)
+            const nameText = new PIXI.Text(
+                `${i + 1}. ${entry.name}`,
                 { fill: "#ffffff", fontSize: 24 }
             );
-            entryText.anchor.set(0.5);
-            entryText.x = GAME_WIDTH / 2;
-            entryText.y = 240 + i * 30;
-            leaderboardContainer.addChild(entryText);
+            nameText.anchor.set(0, 0.5);  // left aligned
+            nameText.x = 0;
+
+            // Score (green, right aligned within row)
+            const scoreText = new PIXI.Text(
+                `${entry.score}`,
+                { fill: "#00ff66", fontSize: 24 }
+            );
+            scoreText.anchor.set(1, 0.5); // right aligned
+            scoreText.x = rowWidth;
+
+            row.addChild(nameText, scoreText);
+
+            // Center row container as a block
+            row.x = GAME_WIDTH / 2 - rowWidth / 2;
+
+            leaderboardContainer.addChild(row);
         });
 
-        // If qualified → ask for name
+        // If qualified → ask for name with input box
         if (qualifies) {
-            const namePrompt = new PIXI.Text("Enter your name:", {
-                fill: "#ffffff",
-                fontSize: 22
-            });
-            namePrompt.anchor.set(0.5);
-            namePrompt.x = GAME_WIDTH / 2;
-            namePrompt.y = 420;
-            gameOverScene.addChild(namePrompt);
+            // Find the index of the pending "???" entry
+            const index = leaderboard.findIndex(e => e.pending);
+            const rowY = leaderboardYStart + index * 30;
+            
+            // Determine input box position (within canvas coords)
+            const inputX = GAME_WIDTH / 2 - rowWidth / 2;
+            const inputY = rowY;    
 
-            // Use HTML input overlayed on canvas
+            // Create input overlay
             const input = document.createElement("input");
             input.type = "text";
+            input.maxLength = 10;
             input.placeholder = "Your name";
             input.style.position = "absolute";
-            input.style.left = (app.view.offsetLeft + GAME_WIDTH / 2 - 80) + "px";
-            input.style.top = (app.view.offsetTop + 440) + "px";
-            input.style.fontSize = "20px";
+            input.style.fontWeight = "bold";
+            input.style.background = "black";
+            input.style.color = "white";
+            input.style.border = "none";
+            input.style.outline = "none";
+            input.style.textAlign = "left";
+
+            // Create save Button
+            const button = document.createElement("button");
+            button.textContent = "Save";
+            button.style.position = "absolute";
+            button.style.padding = "0.3em 0.5em";
+            button.style.borderRadius = "0.5em";
+            button.style.border = "none";
+            button.style.background = "#00ff66";
+            button.style.color = "#000";
+            button.style.fontWeight = "bold";
+            button.style.cursor = "pointer";
+
+            // Save references for positioning
+            activeInput = input;
+            saveButton = button;
+            inputRowX = inputX;
+            inputRowY = inputY;
+            inputRowWidth = rowWidth;
+            inputLeaderboardContainer = leaderboardContainer;
+
+            // Initial positioning before appending input and button
+            positionLeaderboardInputAndSaveBtn();
+
             document.body.appendChild(input);
             input.focus();
+            document.body.appendChild(button);
 
             input.addEventListener("keydown", e => {
                 if (e.key === "Enter" && input.value.trim()) {
                     // Replace the ??? entry with the player's name
-                    leaderboard = leaderboard.map(entry =>
-                        entry.name === "???" ? { name: input.value.trim(), score: entry.score } : entry
-                    );
+                    const playerName = input.value.trim();
+                    leaderboard[index].name = playerName;
+                    delete leaderboard[index].pending;
+
+                    // Clean up input
                     document.body.removeChild(input);
-                    namePrompt.text = "Saved!";
+                    document.body.removeChild(button);
+                    activeInput = null;
+                    saveButton = null;
 
                     // Redraw leaderboard
                     leaderboardContainer.removeChildren().forEach(c => c.destroy());
                     leaderboard.forEach((entry, i) => {
-                        const entryText = new PIXI.Text(
-                            `${i + 1}. ${entry.name} - ${entry.score}s`,
+                        const yPos = leaderboardYStart + i * 30;
+
+                        // Row container
+                        const row = new PIXI.Container();
+                        row.y = yPos;
+
+                        // Rank + name (white, left aligned)
+                        const nameText = new PIXI.Text(
+                            `${i + 1}. ${entry.name}`,
                             { fill: "#ffffff", fontSize: 24 }
                         );
-                        entryText.anchor.set(0.5);
-                        entryText.x = GAME_WIDTH / 2;
-                        entryText.y = 240 + i * 30;
-                        leaderboardContainer.addChild(entryText);
+                        nameText.anchor.set(0, 0.5);  // left aligned
+                        nameText.x = 0;
+                        nameText.y = 0;
+
+                        // Score (green, right aligned within row)
+                        const scoreText = new PIXI.Text(
+                            `${entry.score}`,
+                            { fill: "#00ff66", fontSize: 24 }
+                        );
+                        scoreText.anchor.set(1, 0.5); // right aligned
+                        scoreText.x = rowWidth;
+                        scoreText.y = 0;
+
+                        row.addChild(nameText, scoreText);
+
+                        // Center row container as a block
+                        row.x = GAME_WIDTH / 2 - rowWidth / 2;
+
+                        leaderboardContainer.addChild(row);
                     });
                 }
             });
+
+            button.addEventListener("click", () => {
+                if (input.value.trim()) {
+                    // Trigger same logic as Enter key
+                    const event = new KeyboardEvent("keydown", { key: "Enter" });
+                    input.dispatchEvent(event);
+                }
+            });
         }
-
-
 
         // Album link
         const link = new PIXI.Text("🎵 Listen to 'SOLDIER'", {
@@ -619,7 +799,7 @@
         });
         link.anchor.set(0.5);
         link.x = GAME_WIDTH / 2;
-        link.y = GAME_HEIGHT / 2 + 110;
+        link.y = GAME_HEIGHT - 140;
         link.interactive = true;
         link.buttonMode = true;
         link.cursor = "pointer";
@@ -646,8 +826,6 @@
         playAgain.on("pointerout", () => playAgain.style.fill = "#ffffff");
         playAgain.on("pointerdown", resetGame);
         gameOverScene.addChild(playAgain);
-
-        // setTimeout(resetGame, 3000); // This auto-restart is just for testing and will be removed later
     }
 
     // Reset game state
@@ -657,7 +835,7 @@
 
         // Reset variables
         collectedLetters.clear();
-        timerText.text = `Time: 0s`;
+        timerText.text = `Time left: 60s`;
         gameOver = false;
         startTime = Date.now();
         elapsedTime = 0;
@@ -680,8 +858,16 @@
             letter.style.fill = "#555"; 
         });
 
-        // Clear any existing input boxes
+        // Clear any existing input boxes and buttons 
         document.querySelectorAll("input").forEach(input => document.body.removeChild(input));
+        document.querySelectorAll("button").forEach(button => document.body.removeChild(button));
+        activeInput = null;
+        saveButton = null;
+        leaderboard.forEach(entry => {
+            if (entry.pending) delete entry.pending;
+        });
+
+        startSpawning();
     }
 
     // Start the game
