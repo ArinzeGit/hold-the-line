@@ -721,8 +721,8 @@
             positionLeaderboardInputAndSaveBtn();
 
             document.body.appendChild(input);
-            input.focus();
             document.body.appendChild(button);
+            input.focus();
 
             function saveName() {
                 if (!input.value.trim()) return;
