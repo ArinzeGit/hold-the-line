@@ -36,42 +36,31 @@
     });
     document.getElementById("game-container").appendChild(app.view);
 
-    function applyOrientationTransform() {
+    function checkOrientation() {
         const isPortrait = window.innerHeight > window.innerWidth;
         const isMobile ='ontouchstart' in window || navigator.maxTouchPoints
 
-        // Resize renderer to fill screen
-        app.renderer.resize(window.innerWidth, window.innerHeight);
+        const overlay = document.getElementById("rotate-overlay");
 
-        if (isPortrait && isMobile) {
-            // rotate stage +90deg clockwise so the game content appears landscape
-            app.stage.rotation = Math.PI / 2;
-
-            // After a +90° rotation about (0,0), x' = -y, y' = x
-            // to move everything into positive canvas coords, shift x by screen width
-            app.stage.position.set(window.innerWidth, 0);
+        if (isMobile && isPortrait) {
+            overlay.style.display = "flex";
         } else {
-            // normal (landscape) — no rotation
-            app.stage.rotation = 0;
-            app.stage.position.set(0, 0);
+            overlay.style.display = "none";
         }
     }
 
-    applyOrientationTransform();
-    window.addEventListener("resize", applyOrientationTransform);
-    window.addEventListener("orientationchange", applyOrientationTransform);
+    document.getElementById("close-overlay").addEventListener("click", () => {
+    document.getElementById("rotate-overlay").style.display = "none";
+    });
+
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+    checkOrientation();
 
     function resize() {
-        const isPortrait = window.innerHeight > window.innerWidth;
-        const isMobile ='ontouchstart' in window || navigator.maxTouchPoints
-
-        // Swap width/height when portrait
-        const screenW = isPortrait && isMobile ? window.innerHeight : window.innerWidth;
-        const screenH = isPortrait && isMobile ? window.innerWidth : window.innerHeight;
-
         // Compute scale
-        const scaleX = screenW / GAME_WIDTH;
-        const scaleY = screenH / GAME_HEIGHT;
+        const scaleX = window.innerWidth / GAME_WIDTH;
+        const scaleY = window.innerHeight / GAME_HEIGHT;
         const scale = Math.min(scaleX, scaleY);
 
         // Scale stage
@@ -516,6 +505,7 @@
             clearInterval(collectibleSpawnInterval);
             collectibleSpawnInterval = null;
         }
+        enemies.forEach(en => clearInterval(en.shootInterval));
     }
 
     // Initial spawn
@@ -694,6 +684,7 @@
 
             // Create input overlay
             const input = document.createElement("input");
+            input.className = "lb-input";
             input.type = "text";
             input.maxLength = 10;
             input.placeholder = "Your name";
@@ -707,6 +698,7 @@
 
             // Create save Button
             const button = document.createElement("button");
+            button.className = "lb-save";
             button.textContent = "Save";
             button.style.position = "absolute";
             button.style.padding = "0.3em 0.5em";
@@ -732,63 +724,57 @@
             input.focus();
             document.body.appendChild(button);
 
-            input.addEventListener("keydown", e => {
-                if (e.key === "Enter" && input.value.trim()) {
-                    // Replace the ??? entry with the player's name
-                    const playerName = input.value.trim();
-                    leaderboard[index].name = playerName;
-                    delete leaderboard[index].pending;
+            function saveName() {
+                if (!input.value.trim()) return;
+                const playerName = input.value.trim();
+                leaderboard[index].name = playerName;
+                delete leaderboard[index].pending;
 
-                    // Clean up input
-                    document.body.removeChild(input);
-                    document.body.removeChild(button);
-                    activeInput = null;
-                    saveButton = null;
+                // Clean up input
+                document.body.removeChild(input);
+                document.body.removeChild(button);
+                activeInput = null;
+                saveButton = null;
 
-                    // Redraw leaderboard
-                    leaderboardContainer.removeChildren().forEach(c => c.destroy());
-                    leaderboard.forEach((entry, i) => {
-                        const yPos = leaderboardYStart + i * 30;
+                // Redraw leaderboard
+                leaderboardContainer.removeChildren().forEach(c => c.destroy());
+                leaderboard.forEach((entry, i) => {
+                    const yPos = leaderboardYStart + i * 30;
 
-                        // Row container
-                        const row = new PIXI.Container();
-                        row.y = yPos;
+                    // Row container
+                    const row = new PIXI.Container();
+                    row.y = yPos;
 
-                        // Rank + name (white, left aligned)
-                        const nameText = new PIXI.Text(
-                            `${i + 1}. ${entry.name}`,
-                            { fill: "#ffffff", fontSize: 24 }
-                        );
-                        nameText.anchor.set(0, 0.5);  // left aligned
-                        nameText.x = 0;
-                        nameText.y = 0;
+                    // Rank + name (white, left aligned)
+                    const nameText = new PIXI.Text(
+                        `${i + 1}. ${entry.name}`,
+                        { fill: "#ffffff", fontSize: 24 }
+                    );
+                    nameText.anchor.set(0, 0.5);  // left aligned
+                    nameText.x = 0;
+                    nameText.y = 0;
 
-                        // Score (green, right aligned within row)
-                        const scoreText = new PIXI.Text(
-                            `${entry.score}`,
-                            { fill: "#00ff66", fontSize: 24 }
-                        );
-                        scoreText.anchor.set(1, 0.5); // right aligned
-                        scoreText.x = rowWidth;
-                        scoreText.y = 0;
+                    // Score (green, right aligned within row)
+                    const scoreText = new PIXI.Text(
+                        `${entry.score}`,
+                        { fill: "#00ff66", fontSize: 24 }
+                    );
+                    scoreText.anchor.set(1, 0.5); // right aligned
+                    scoreText.x = rowWidth;
+                    scoreText.y = 0;
 
-                        row.addChild(nameText, scoreText);
+                    row.addChild(nameText, scoreText);
 
-                        // Center row container as a block
-                        row.x = GAME_WIDTH / 2 - rowWidth / 2;
+                    // Center row container as a block
+                    row.x = GAME_WIDTH / 2 - rowWidth / 2;
 
-                        leaderboardContainer.addChild(row);
-                    });
-                }
-            });
+                    leaderboardContainer.addChild(row);
+                });
+            }
 
-            button.addEventListener("click", () => {
-                if (input.value.trim()) {
-                    // Trigger same logic as Enter key
-                    const event = new KeyboardEvent("keydown", { key: "Enter" });
-                    input.dispatchEvent(event);
-                }
-            });
+           input.addEventListener("keydown", e => e.key === "Enter" && saveName());
+
+            button.addEventListener("click", saveName);
         }
 
         // Album link
@@ -858,9 +844,9 @@
             letter.style.fill = "#555"; 
         });
 
-        // Clear any existing input boxes and buttons 
-        document.querySelectorAll("input").forEach(input => document.body.removeChild(input));
-        document.querySelectorAll("button").forEach(button => document.body.removeChild(button));
+        // Clear any existing input boxes and save buttons 
+        document.querySelectorAll(".lb-input, .lb-save").forEach(el => el.remove());
+
         activeInput = null;
         saveButton = null;
         leaderboard.forEach(entry => {
