@@ -71,12 +71,6 @@
     window.addEventListener("resize", resize);
     window.addEventListener("orientationchange", resize);
 
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener("resize", () => {
-            resize();
-        });
-    }
-
     // Game state
     let collectedLetters = new Set();
     let gameOver = false;
