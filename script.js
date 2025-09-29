@@ -433,8 +433,8 @@
 
             // Hit player
             if (hitTest(player, b)) {
-                endGame(true); // For testing win scenario. Normally would be:
-                // endGame(false);
+                // endGame(true); // For testing win scenario. Normally would be:
+                endGame(false);
             }
 
             // Off screen
@@ -816,8 +816,6 @@
 
     // Reset game state
     function resetGame() {
-        window.dispatchEvent(new Event("resize")); //fix scaling issues on mobile
-
         // Reset controls in case endgame destroyed buttons abruptly on mobile
         keys["ArrowLeft"] = false;
         keys["ArrowRight"] = false;
