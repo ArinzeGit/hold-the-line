@@ -816,6 +816,11 @@
 
     // Reset game state
     function resetGame() {
+        // Reset controls in case endgame destroyed buttons abruptly on mobile
+        keys["ArrowLeft"] = false;
+        keys["ArrowRight"] = false;
+        keys["Space"] = false;
+
         gameOverScene.visible = false;
         gameScene.visible = true;
 
