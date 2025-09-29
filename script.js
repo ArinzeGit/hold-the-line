@@ -433,8 +433,8 @@
 
             // Hit player
             if (hitTest(player, b)) {
-                // endGame(true); // For testing win scenario. Normally would be:
-                endGame(false);
+                endGame(true); // For testing win scenario. Normally would be:
+                // endGame(false);
             }
 
             // Off screen
