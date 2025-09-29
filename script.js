@@ -73,7 +73,6 @@
 
     if (window.visualViewport) {
         window.visualViewport.addEventListener("resize", () => {
-            positionLeaderboardInputAndSaveBtn();
             resize();
         });
     }
