@@ -816,7 +816,7 @@
 
     // Reset game state
     function resetGame() {
-        resize(); //fix scaling issues on mobile
+        window.dispatchEvent(new Event("resize")); //fix scaling issues on mobile
 
         // Reset controls in case endgame destroyed buttons abruptly on mobile
         keys["ArrowLeft"] = false;
