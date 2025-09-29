@@ -71,6 +71,13 @@
     window.addEventListener("resize", resize);
     window.addEventListener("orientationchange", resize);
 
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", () => {
+            positionLeaderboardInputAndSaveBtn();
+            resize();
+        });
+    }
+
     // Game state
     let collectedLetters = new Set();
     let gameOver = false;
@@ -687,7 +694,7 @@
             input.className = "lb-input";
             input.type = "text";
             input.maxLength = 10;
-            input.placeholder = "Your name";
+            input.placeholder = "Enter your name";
             input.style.position = "absolute";
             input.style.fontWeight = "bold";
             input.style.background = "black";
