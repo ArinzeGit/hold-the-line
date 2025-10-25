@@ -874,7 +874,7 @@
             startScene.visible = true;
 
             // Trigger a resize so elements reposition correctly
-            // window.dispatchEvent(new Event("resize"));
+            window.dispatchEvent(new Event("resize"));
         });
         gameOverScene.addChild(backToMenu);
 
