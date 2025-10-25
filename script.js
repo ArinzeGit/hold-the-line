@@ -77,21 +77,54 @@
     let startTime = 0;
     let elapsedTime = 0; // in seconds
 
-    // Containers
-    const gameScene = new PIXI.Container();
-    const uiScene = new PIXI.Container();
-    const gameOverScene = new PIXI.Container();
-    app.stage.addChild(gameScene, uiScene,gameOverScene);
-    gameOverScene.visible = false;
-
-    // Arrays
+     // Arrays
     const projectiles = [];
     const enemies = [];
     const collectibles = [];
     const enemyBullets = [];
 
-    // UI
+    // Game Scenes
+    const startScene = new PIXI.Container();
+    const uiScene = new PIXI.Container();
+    const gameScene = new PIXI.Container();
+    const gameOverScene = new PIXI.Container();
+    app.stage.addChild(startScene, gameScene, uiScene,gameOverScene);
+    startScene.visible = true;
+    uiScene.visible = false;
+    gameScene.visible = false;
+    gameOverScene.visible = false;
 
+
+    // Start Scene
+    // Title
+    const title = new PIXI.Text("Hold the line", {
+        fill: "#ffff66",
+        fontSize: 48,
+        fontWeight: "bold"
+    });
+    title.anchor.set(0.5);
+    title.x = GAME_WIDTH / 2;
+    title.y = 200;
+    startScene.addChild(title);
+
+    const playBtn = new PIXI.Text("▶ Play", {
+        fill: "#ffffff",
+        fontSize: 36,
+        fontWeight: "bold"
+    });
+    playBtn.anchor.set(0.5);
+    playBtn.x = GAME_WIDTH / 2;
+    playBtn.y = 300;
+    playBtn.interactive = true;
+    playBtn.cursor = "pointer";
+    playBtn.on("pointerover", () => playBtn.style.fill = "#ffff66");
+    playBtn.on("pointerout", () => playBtn.style.fill = "#ffffff");
+    playBtn.on("pointerdown", () => {
+        resetGame();
+    });
+    startScene.addChild(playBtn);
+
+    // UI Scene
     // Letter display container
     const wordDisplay = new PIXI.Container();
     wordDisplay.x = 10;
@@ -223,6 +256,7 @@
         createMobileControls();
     }
 
+    // Game Scene
     // Player
     const player = new PIXI.Graphics();
     player.beginFill(0x00ff66);
@@ -232,6 +266,7 @@
     player.y = GAME_HEIGHT - 50;
     gameScene.addChild(player);
 
+    //Functions for spawning entities
     // Spawn enemy
     function spawnEnemy() {
         // Create a container so enemy shape + text stick together
@@ -358,6 +393,7 @@
     // Game loop
     app.ticker.add(() => {
         if (gameOver) return;
+        if (!startTime) return;
 
         // Update timer
         elapsedTime = Math.floor((Date.now() - startTime) / 1000);
@@ -812,6 +848,36 @@
         playAgain.on("pointerout", () => playAgain.style.fill = "#ffffff");
         playAgain.on("pointerdown", resetGame);
         gameOverScene.addChild(playAgain);
+        
+       // Back to Menu button
+        const backToMenu = new PIXI.Text("↩ Back to Menu", {
+            fill: "#ffffff",
+            fontSize: 28,
+            fontWeight: "bold"
+        });
+        backToMenu.anchor.set(0.5);
+        backToMenu.x = GAME_WIDTH / 2;
+        backToMenu.y = GAME_HEIGHT - 30;
+        backToMenu.interactive = true;
+        backToMenu.buttonMode = true;
+        backToMenu.cursor = "pointer";
+
+        backToMenu.on("pointerover", () => backToMenu.style.fill = "#ffff66");
+        backToMenu.on("pointerout", () => backToMenu.style.fill = "#ffffff");
+        backToMenu.on("pointerdown", () => {
+
+            // Hide game and UI scenes
+            gameOverScene.visible = false;
+            uiScene.visible = false;
+
+            // Show start scene
+            startScene.visible = true;
+
+            // Trigger a resize so elements reposition correctly
+            // window.dispatchEvent(new Event("resize"));
+        });
+        gameOverScene.addChild(backToMenu);
+
     }
 
     // Reset game state
@@ -821,8 +887,10 @@
         keys["ArrowRight"] = false;
         keys["Space"] = false;
 
-        gameOverScene.visible = false;
+        startScene.visible = false;
+        uiScene.visible = true;
         gameScene.visible = true;
+        gameOverScene.visible = false;
 
         // Reset variables
         collectedLetters.clear();
@@ -860,7 +928,4 @@
 
         startSpawning();
     }
-
-    // Start the game
-    resetGame();
 })();
