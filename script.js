@@ -107,10 +107,11 @@
     const collectibles = [];
     const enemyBullets = [];
 
+    // Background
     const bg = new PIXI.Graphics();
     const gradient = app.renderer.generateTexture((() => {
         const g = new PIXI.Graphics();
-        g.beginTextureFill({ color: 0x222244 });
+        g.beginTextureFill({ color: 0x111827 });
         g.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
         g.endFill();
         g.beginTextureFill({ color: 0x000000, alpha: 0.5 });
@@ -134,20 +135,36 @@
     gameScene.visible = false;
     gameOverScene.visible = false;
 
+    app.ticker.add(() => {
+        startBG.alpha = 0.95 + Math.sin(Date.now() / 600) * 0.5;
+    });
 
     // Start Scene
-    // Title
-    const title = new PIXI.Text("Hold the line", {
-        fill: "#ffff66",
-        fontSize: 48,
-        fontWeight: "bold",
-        fontFamily: "Orbitron"
-    });
-    title.anchor.set(0.5);
-    title.x = GAME_WIDTH / 2;
-    title.y = 200;
-    startScene.addChild(title);
+    // Background
+    const startBG = PIXI.Sprite.from('assets/hold-the-line-art.png');
+    startBG.width = GAME_WIDTH;
+    startBG.height = GAME_HEIGHT;
+    startScene.addChild(startBG);
 
+    // Mission Instructions
+    const missionText = new PIXI.Text(
+        'Mission: Hold the line against the enemies\nand collect all the letters of "SOLDIER" under 60 seconds.',
+        {
+            fill: '#dddddd',
+            fontSize: 25,
+            fontFamily: 'Orbitron',
+            align: 'center',
+            wordWrap: true,
+            wordWrapWidth: 800,
+        }
+    );
+    missionText.anchor.set(0.5);
+    missionText.x = GAME_WIDTH / 2;
+    missionText.y = 430; // slightly above the Play button
+    startScene.addChild(missionText);
+
+
+    // Play Button
     const playBtn = new PIXI.Text("▶ Play", {
         fill: "#ffffff",
         fontSize: 36,
@@ -156,7 +173,7 @@
     });
     playBtn.anchor.set(0.5);
     playBtn.x = GAME_WIDTH / 2;
-    playBtn.y = 300;
+    playBtn.y = 500;
     playBtn.interactive = true;
     playBtn.cursor = "pointer";
     playBtn.on("pointerover", () => playBtn.style.fill = "#ffff66");
