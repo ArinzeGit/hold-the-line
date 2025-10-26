@@ -124,7 +124,8 @@
     const title = new PIXI.Text("Hold the line", {
         fill: "#ffff66",
         fontSize: 48,
-        fontWeight: "bold"
+        fontWeight: "bold",
+        fontFamily: "Orbitron"
     });
     title.anchor.set(0.5);
     title.x = GAME_WIDTH / 2;
@@ -134,7 +135,8 @@
     const playBtn = new PIXI.Text("▶ Play", {
         fill: "#ffffff",
         fontSize: 36,
-        fontWeight: "bold"
+        fontWeight: "bold",
+        fontFamily: "Orbitron"
     });
     playBtn.anchor.set(0.5);
     playBtn.x = GAME_WIDTH / 2;
@@ -176,7 +178,7 @@
     const timerText = new PIXI.Text(`Time left: 60s`, {
         fill: "#fff",
         fontSize: 24,
-        fontFamily: "Verdana",
+        fontFamily: "Orbitron",
         stroke: "#000000",
         strokeThickness: 4
     });
@@ -316,6 +318,7 @@
             fill: "#ffffff",
             fontSize: 14,
             fontWeight: "bold",
+            fontFamily: "Orbitron",
             stroke: "#000000",
             strokeThickness: 3,
             dropShadow: true,
@@ -640,14 +643,16 @@
         const labelText = new PIXI.Text("Score:", {
             fill: "#ffffff",
             fontSize: 28,
-            fontWeight: "bold"
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
         });
 
         // Value (green/red)
         const valueText = new PIXI.Text(`${score}`, {
             fill: "#00ff66",
             fontSize: 28,
-            fontWeight: "bold"
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
         });
 
         // Compute total width (with small spacing)
@@ -670,7 +675,8 @@
         const lbTitle = new PIXI.Text("🏆 Top 5 Soldiers 🏆", {
             fill: "#ffff00",
             fontSize: 32,
-            fontWeight: "bold"
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
         });
         lbTitle.anchor.set(0.5);
         lbTitle.x = GAME_WIDTH / 2;
@@ -709,7 +715,7 @@
             // Rank + name (white, left aligned)
             const nameText = new PIXI.Text(
                 `${i + 1}. ${entry.name}`,
-                { fill: "#ffffff", fontSize: 24 }
+                { fill: "#ffffff", fontSize: 24, fontFamily: "Orbitron" }
             );
             nameText.anchor.set(0, 0.5);  // left aligned
             nameText.x = 0;
@@ -717,7 +723,7 @@
             // Score (green, right aligned within row)
             const scoreText = new PIXI.Text(
                 `${entry.score}`,
-                { fill: "#00ff66", fontSize: 24 }
+                { fill: "#00ff66", fontSize: 24, fontFamily: "Orbitron" }
             );
             scoreText.anchor.set(1, 0.5); // right aligned
             scoreText.x = rowWidth;
@@ -806,7 +812,7 @@
                     // Rank + name (white, left aligned)
                     const nameText = new PIXI.Text(
                         `${i + 1}. ${entry.name}`,
-                        { fill: "#ffffff", fontSize: 24 }
+                        { fill: "#ffffff", fontSize: 24, fontFamily: "Orbitron" }
                     );
                     nameText.anchor.set(0, 0.5);  // left aligned
                     nameText.x = 0;
@@ -815,7 +821,7 @@
                     // Score (green, right aligned within row)
                     const scoreText = new PIXI.Text(
                         `${entry.score}`,
-                        { fill: "#00ff66", fontSize: 24 }
+                        { fill: "#00ff66", fontSize: 24, fontFamily: "Orbitron" }
                     );
                     scoreText.anchor.set(1, 0.5); // right aligned
                     scoreText.x = rowWidth;
@@ -836,10 +842,11 @@
         }
 
         // Album link
-        const link = new PIXI.Text("🎵 Listen to 'SOLDIER'", {
+        const link = new PIXI.Text("Listen to 🎵SOLDIER", {
             fill: "#44ccff",
             fontSize: 38,
-            fontWeight: "bold"
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
         });
         link.anchor.set(0.5);
         link.x = GAME_WIDTH / 2;
@@ -858,7 +865,8 @@
         const backToMenu = new PIXI.Text("↩ Back to Menu", {
             fill: "#ffffff",
             fontSize: 28,
-            fontWeight: "bold"
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
         });
         backToMenu.interactive = true;
         backToMenu.buttonMode = true;
@@ -877,7 +885,8 @@
         const playAgain = new PIXI.Text("▶ Play Again", {
             fill: "#ffffff",
             fontSize: 28,
-            fontWeight: "bold"
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
         });
         playAgain.interactive = true;
         playAgain.buttonMode = true;
