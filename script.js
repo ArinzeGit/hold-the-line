@@ -1,4 +1,10 @@
-(() => {
+(async() => {
+
+     // Wait for Orbitron font to load before creating any PIXI.Text
+    await document.fonts.load('20px "Orbitron"');
+    await document.fonts.ready;
+    console.log("Orbitron font loaded — starting game...");
+    
     // Config
     const GAME_WIDTH = 1000;
     const GAME_HEIGHT = 600;
@@ -603,6 +609,7 @@
         const resultText = new PIXI.Text(msg, {
             fill: win ? "#00ff66" : "#ff3333",
             fontSize: 48,
+            fontFamily: "Orbitron",
             fontWeight: "bold"
         });
         resultText.anchor.set(0.5);

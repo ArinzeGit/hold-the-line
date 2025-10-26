@@ -9,6 +9,12 @@ html, body {
     overflow: hidden;
 }
 
+.orbitron {
+  font-family: "Orbitron", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
 #game-container {
     width: 100vw;
     height: 100vh;
