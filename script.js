@@ -4,7 +4,7 @@
     await document.fonts.load('20px "Orbitron"');
     await document.fonts.ready;
     console.log("Orbitron font loaded — starting game...");
-    
+
     // Config
     const GAME_WIDTH = 1000;
     const GAME_HEIGHT = 600;
@@ -88,6 +88,22 @@
     const enemies = [];
     const collectibles = [];
     const enemyBullets = [];
+
+    const bg = new PIXI.Graphics();
+    const gradient = app.renderer.generateTexture((() => {
+        const g = new PIXI.Graphics();
+        g.beginTextureFill({ color: 0x222244 });
+        g.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        g.endFill();
+        g.beginTextureFill({ color: 0x000000, alpha: 0.5 });
+        g.drawRect(0, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT / 2);
+        g.endFill();
+        return g;
+    })());
+    bg.beginTextureFill({ texture: gradient });
+    bg.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    bg.endFill();
+    app.stage.addChildAt(bg, 0); // send to back
 
     // Game Scenes
     const startScene = new PIXI.Container();
@@ -622,7 +638,7 @@
         if (win) { score = 60 - elapsedTime; }
 
         // Label (always white)
-        const labelText = new PIXI.Text("Your score:", {
+        const labelText = new PIXI.Text("Score:", {
             fill: "#ffffff",
             fontSize: 28,
             fontWeight: "bold"
@@ -641,7 +657,7 @@
 
         // Center the whole block
         const startX = (GAME_WIDTH - totalWidth) / 2;
-        const y = 130;
+        const y = 105;
 
         labelText.x = startX;
         labelText.y = y;
@@ -823,7 +839,7 @@
         // Album link
         const link = new PIXI.Text("🎵 Listen to 'SOLDIER'", {
             fill: "#44ccff",
-            fontSize: 28,
+            fontSize: 38,
             fontWeight: "bold"
         });
         link.anchor.set(0.5);
@@ -839,52 +855,53 @@
         });
         gameOverScene.addChild(link);
 
+        // Back to Menu button
+        const backToMenu = new PIXI.Text("↩ Back to Menu", {
+            fill: "#ffffff",
+            fontSize: 28,
+            fontWeight: "bold"
+        });
+        backToMenu.interactive = true;
+        backToMenu.buttonMode = true;
+        backToMenu.cursor = "pointer";
+        backToMenu.on("pointerover", () => backToMenu.style.fill = "#ffff66");
+        backToMenu.on("pointerout", () => backToMenu.style.fill = "#ffffff");
+        backToMenu.on("pointerdown", () => {
+            // Hide game and UI scenes
+            gameOverScene.visible = false;
+            uiScene.visible = false;
+            // Show start scene
+            startScene.visible = true;
+        });
+
         // Play Again button
         const playAgain = new PIXI.Text("▶ Play Again", {
             fill: "#ffffff",
-            fontSize: 32,
+            fontSize: 28,
             fontWeight: "bold"
         });
-        playAgain.anchor.set(0.5);
-        playAgain.x = GAME_WIDTH / 2;
-        playAgain.y = GAME_HEIGHT - 80;
         playAgain.interactive = true;
         playAgain.buttonMode = true;
         playAgain.cursor = "pointer";
         playAgain.on("pointerover", () => playAgain.style.fill = "#ffff66");
         playAgain.on("pointerout", () => playAgain.style.fill = "#ffffff");
         playAgain.on("pointerdown", resetGame);
-        gameOverScene.addChild(playAgain);
         
-       // Back to Menu button
-        const backToMenu = new PIXI.Text("↩ Back to Menu", {
-            fill: "#ffffff",
-            fontSize: 28,
-            fontWeight: "bold"
-        });
-        backToMenu.anchor.set(0.5);
-        backToMenu.x = GAME_WIDTH / 2;
-        backToMenu.y = GAME_HEIGHT - 30;
-        backToMenu.interactive = true;
-        backToMenu.buttonMode = true;
-        backToMenu.cursor = "pointer";
+        // Compute total width (with small spacing)
+        const spacing_ = 500;
+        const totalWidth_ = backToMenu.width + spacing_ + playAgain.width;
 
-        backToMenu.on("pointerover", () => backToMenu.style.fill = "#ffff66");
-        backToMenu.on("pointerout", () => backToMenu.style.fill = "#ffffff");
-        backToMenu.on("pointerdown", () => {
+        // Center the whole block
+        const startX_ = (GAME_WIDTH - totalWidth_) / 2;
+        const y_ = GAME_HEIGHT - 90;
 
-            // Hide game and UI scenes
-            gameOverScene.visible = false;
-            uiScene.visible = false;
+        backToMenu.x = startX_;
+        backToMenu.y = y_;
 
-            // Show start scene
-            startScene.visible = true;
+        playAgain.x = startX_ + backToMenu.width + spacing_;
+        playAgain.y = y_;
 
-            // Trigger a resize so elements reposition correctly
-            window.dispatchEvent(new Event("resize"));
-        });
-        gameOverScene.addChild(backToMenu);
-
+        gameOverScene.addChild(backToMenu, playAgain);
     }
 
     // Reset game state
