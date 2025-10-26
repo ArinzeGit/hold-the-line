@@ -22,6 +22,8 @@
         "Despair": 0x8A2BE2,  //purple
         "Guilt": 0x00D1A0  //green
     };
+    const BUTTON_SIZE = 100;
+    const BTN_PADDING = BUTTON_SIZE * 0.2;
 
     // Placeholder leaderboard
     let leaderboard = [
@@ -188,16 +190,13 @@
     window.addEventListener("keyup", e => keys[e.code] = false);
 
     // Create mobile controls if on a touch device
-    const btnSize = 100;
-    const padding = btnSize * 0.2;
-
     function createButton(label, color, x, y, onPress, onRelease) {
         const btn = new PIXI.Container();
 
         // Glow background (soft halo)
         const glow = new PIXI.Graphics()
             .beginFill(color, 0.15)
-            .drawCircle(0, 0, btnSize * 1.2)
+            .drawCircle(0, 0, BUTTON_SIZE * 1.2)
             .endFill();
         glow.alpha = 0.4;
 
@@ -205,7 +204,7 @@
         const outer = new PIXI.Graphics()
             .lineStyle(4, color, 0.9)       // border
             .beginFill(0x000000, 0.15)      // subtle transparency inside
-            .drawCircle(0, 0, btnSize)
+            .drawCircle(0, 0, BUTTON_SIZE)
             .endFill();
 
         // Label (cleaner + holographic stroke)
@@ -253,19 +252,19 @@
 
     function createMobileControls() {
         // Left
-        const leftBtn = createButton("◀", 0x06D6A0, padding + btnSize, GAME_HEIGHT - btnSize - padding,
+        const leftBtn = createButton("◀", 0x06D6A0, BTN_PADDING + BUTTON_SIZE, GAME_HEIGHT - BUTTON_SIZE - BTN_PADDING,
             () => keys["ArrowLeft"] = true,
             () => keys["ArrowLeft"] = false
         );
 
         // Right
-        const rightBtn = createButton("▶", 0x06D6A0, padding * 2 + btnSize * 3, GAME_HEIGHT - btnSize - padding,
+        const rightBtn = createButton("▶", 0x06D6A0, BTN_PADDING * 2 + BUTTON_SIZE * 3, GAME_HEIGHT - BUTTON_SIZE - BTN_PADDING,
             () => keys["ArrowRight"] = true,
             () => keys["ArrowRight"] = false
         );
 
         // Shoot
-        const shootBtn = createButton("●", 0xEF233C, GAME_WIDTH - padding - btnSize, GAME_HEIGHT - btnSize - padding,
+        const shootBtn = createButton("●", 0xEF233C, GAME_WIDTH - BTN_PADDING - BUTTON_SIZE, GAME_HEIGHT - BUTTON_SIZE - BTN_PADDING,
             () => keys["Space"] = true,
             () => keys["Space"] = false
         );
@@ -668,7 +667,7 @@
         gameOverScene.addChild(labelText, valueText);
 
         // Leaderboard title
-        const lbTitle = new PIXI.Text("🏆 Top 5 Soldiers", {
+        const lbTitle = new PIXI.Text("🏆 Top 5 Soldiers 🏆", {
             fill: "#ffff00",
             fontSize: 32,
             fontWeight: "bold"
