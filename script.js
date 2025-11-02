@@ -126,12 +126,19 @@
 
     // Game Scenes
     const startScene = new PIXI.Container();
-    const uiScene = new PIXI.Container();
+
     const gameScene = new PIXI.Container();
+    // containers for layering
+    const backgroundContainer = new PIXI.Container();
+    const bulletCollectibleContainer = new PIXI.Container();
+    const playerEnemyContainer = new PIXI.Container();
+    const uiContainer = new PIXI.Container();
+    gameScene.addChild(backgroundContainer, bulletCollectibleContainer, playerEnemyContainer, uiContainer);
+
     const gameOverScene = new PIXI.Container();
-    app.stage.addChild(startScene, gameScene, uiScene,gameOverScene);
+
+    app.stage.addChild(startScene, gameScene, gameOverScene);
     startScene.visible = true;
-    uiScene.visible = false;
     gameScene.visible = false;
     gameOverScene.visible = false;
 
@@ -183,12 +190,12 @@
     });
     startScene.addChild(playBtn);
 
-    // UI Scene
+    // UI Container
     // Letter display container
     const wordDisplay = new PIXI.Container();
     wordDisplay.x = 10;
     wordDisplay.y = 10;
-    uiScene.addChild(wordDisplay);
+    uiContainer.addChild(wordDisplay);
 
     const letterTexts = [];
 
@@ -217,7 +224,7 @@
     });
     timerText.x = GAME_WIDTH - 200;
     timerText.y = 10;
-    uiScene.addChild(timerText);
+    uiContainer.addChild(timerText);
 
     // Controls
     const keys = {};
@@ -304,8 +311,7 @@
             () => keys["Space"] = false
         );
 
-        gameScene.addChild(leftBtn, rightBtn, shootBtn);
-
+        bulletCollectibleContainer.addChild(leftBtn, rightBtn, shootBtn);
     }
 
     if ('ontouchstart' in window || navigator.maxTouchPoints) {
@@ -313,14 +319,21 @@
     }
 
     // Game Scene
-    // Player
-    const player = new PIXI.Graphics();
-    player.beginFill(0x00ff66);
-    player.drawRect(-20, -20, 40, 40); // placeholder
-    player.endFill();
+    // Player sprite
+    const playerTexture = PIXI.Texture.from('assets/soldier-sprite-gamePlay.png');
+    const player = new PIXI.Sprite(playerTexture);
+
+    // Set anchor to center bottom so movement feels natural
+    player.anchor.set(0.5, 1);
+
+    // Scale the sprite
+    player.scale.set(0.1);
+
+    // Position at bottom center
     player.x = GAME_WIDTH / 2;
-    player.y = GAME_HEIGHT - 50;
-    gameScene.addChild(player);
+    player.y = GAME_HEIGHT;
+
+    playerEnemyContainer.addChild(player);
 
     //Functions for spawning entities
     // Spawn enemy
@@ -368,7 +381,7 @@
         // Position enemy
         enemy.x = Math.random() * (GAME_WIDTH - 50) + 25;
         enemy.y = 50;
-        gameScene.addChild(enemy);
+        playerEnemyContainer.addChild(enemy);
         enemies.push(enemy);
 
         // Small pulse animation
@@ -402,7 +415,7 @@
         bullet.endFill();
         bullet.x = enemy.x;
         bullet.y = enemy.y + 20;
-        gameScene.addChild(bullet);
+        bulletCollectibleContainer.addChild(bullet);
         enemyBullets.push(bullet);
     }
 
@@ -421,7 +434,7 @@
     col.x = Math.random() * (GAME_WIDTH - 40) + 20;
     col.y = -20;
     col.letter = letter; // store letter on collectible
-    gameScene.addChild(col);
+    bulletCollectibleContainer.addChild(col);
     collectibles.push(col);
     }
 
@@ -432,8 +445,8 @@
         proj.drawRect(-3, -10, 6, 20);
         proj.endFill();
         proj.x = player.x;
-        proj.y = player.y - 30;
-        gameScene.addChild(proj);
+        proj.y = player.y - 97;
+        bulletCollectibleContainer.addChild(proj);
         projectiles.push(proj);
     }
 
@@ -481,7 +494,7 @@
 
             p.y -= PROJECTILE_SPEED;
             if (p.y < -20) {
-                gameScene.removeChild(p);
+                bulletCollectibleContainer.removeChild(p);
                 p.destroy();
                 projectiles.splice(i, 1);
             }
@@ -498,12 +511,12 @@
                 if (pr.destroyed) continue;
 
                 if (hitTest(pr, en)) {
-                    gameScene.removeChild(en);
+                    playerEnemyContainer.removeChild(en);
                     en.destroy();
                     clearInterval(en.shootInterval); // stop shooting
                     enemies.splice(i, 1);
 
-                    gameScene.removeChild(pr);
+                    bulletCollectibleContainer.removeChild(pr);
                     pr.destroy();
                     projectiles.splice(j, 1);
                     break;
@@ -511,7 +524,7 @@
             }
 
             if (!en.destroyed && en.y > GAME_HEIGHT + 20) {
-                gameScene.removeChild(en);
+                playerEnemyContainer.removeChild(en);
                 en.destroy();
                 enemies.splice(i, 1);
             }
@@ -532,7 +545,7 @@
 
             // Off screen
             if (b.y > GAME_HEIGHT + 20) {
-                gameScene.removeChild(b);
+                bulletCollectibleContainer.removeChild(b);
                 b.destroy();
                 enemyBullets.splice(i, 1);
             }
@@ -558,7 +571,7 @@
                     }
                 }
 
-                gameScene.removeChild(c);
+                bulletCollectibleContainer.removeChild(c);
                 c.destroy();
                 collectibles.splice(i, 1);
 
@@ -568,7 +581,7 @@
             }
 
             if (!c.destroyed && c.y > GAME_HEIGHT + 20) {
-                gameScene.removeChild(c);
+                bulletCollectibleContainer.removeChild(c);
                 c.destroy();
                 collectibles.splice(i, 1);
             }
@@ -651,7 +664,8 @@
     function endGame(win) {
         stopSpawning();
         gameOver = true;
-        gameScene.visible = false;
+        bulletCollectibleContainer.visible = false;
+        playerEnemyContainer.visible = false;
         gameOverScene.removeChildren();
         gameOverScene.visible = true;
 
@@ -907,10 +921,8 @@
         backToMenu.on("pointerover", () => backToMenu.style.fill = "#ffff66");
         backToMenu.on("pointerout", () => backToMenu.style.fill = "#ffffff");
         backToMenu.on("pointerdown", () => {
-            // Hide game and UI scenes
             gameOverScene.visible = false;
-            uiScene.visible = false;
-            // Show start scene
+            gameScene.visible = false;
             startScene.visible = true;
         });
 
@@ -953,8 +965,11 @@
         keys["Space"] = false;
 
         startScene.visible = false;
-        uiScene.visible = true;
         gameScene.visible = true;
+        backgroundContainer.visible = true;
+        bulletCollectibleContainer.visible = true;
+        playerEnemyContainer.visible = true;
+        uiContainer.visible = true;
         gameOverScene.visible = false;
 
         // Reset variables
