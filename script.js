@@ -361,7 +361,6 @@
         }
         const enemySprite = new PIXI.Sprite(enemyTexture);
 
-        // Set anchor to center bottom so movement feels natural
         enemySprite.anchor.set(0.5, 0.5);
 
         // Scale the sprite
