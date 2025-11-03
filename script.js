@@ -339,71 +339,80 @@
     // Spawn enemy
     function spawnEnemy() {
         // Create a container so enemy shape + text stick together
-        const enemy = new PIXI.Container();
+        const enemyContainer = new PIXI.Container();
 
         // Random emotion
         const emotion = NEGATIVE_EMOTIONS[Math.floor(Math.random() * NEGATIVE_EMOTIONS.length)];
         const color = EMOTION_COLORS[emotion];
-        enemy.color = color;       // save color so bullets use same theme
+        enemyContainer.color = color;       // save color so bullets use same theme
 
-        // Enemy circle
-        const body = new PIXI.Graphics();
-        body.beginFill(color);
-        body.drawCircle(0, 0, 22);
-        body.endFill();
+        // Enemy sprite
+        let enemyTexture;
+        if (emotion == "Fear"){
+            enemyTexture = PIXI.Texture.from('assets/fear-sprite.png');
+        }else if (emotion == "Anxiety"){
+            enemyTexture = PIXI.Texture.from('assets/anxiety-sprite.png');
+        }else if (emotion == "Anger"){
+            enemyTexture = PIXI.Texture.from('assets/fear-sprite.png');
+        }else if (emotion == "Despair"){
+            enemyTexture = PIXI.Texture.from('assets/anxiety-sprite.png');
+        }else if (emotion == "Guilt"){
+            enemyTexture = PIXI.Texture.from('assets/fear-sprite.png');
+        }
+        const enemySprite = new PIXI.Sprite(enemyTexture);
 
-        // outer glow
-        const glow = new PIXI.Graphics();
-        glow.beginFill(color, 0.3);
-        glow.drawCircle(0, 0, 28);
-        glow.endFill();
+        // Set anchor to center bottom so movement feels natural
+        enemySprite.anchor.set(0.5, 0.5);
 
-        enemy.addChild(glow, body);
+        // Scale the sprite
+        enemySprite.scale.set(0.08);
+
+        enemyContainer.addChild(enemySprite);
         
-        const label = new PIXI.Text(emotion, {
-            fill: "#ffffff",
-            fontSize: 14,
-            fontWeight: "bold",
-            fontFamily: "Orbitron",
-            stroke: "#000000",
-            strokeThickness: 3,
-            dropShadow: true,
-            dropShadowColor: "#000000",
-            dropShadowBlur: 4,
-            dropShadowDistance: 2,
-            align: "center",
-            wordWrap: true,
-            wordWrapWidth: 40
-        });
-        label.anchor.set(0.5);
-        enemy.addChild(label);
+        // const label = new PIXI.Text(emotion, {
+        //     fill: "#ffffff",
+        //     fontSize: 14,
+        //     fontWeight: "bold",
+        //     fontFamily: "Orbitron",
+        //     stroke: "#000000",
+        //     strokeThickness: 3,
+        //     dropShadow: true,
+        //     dropShadowColor: "#000000",
+        //     dropShadowBlur: 4,
+        //     dropShadowDistance: 2,
+        //     align: "center",
+        //     wordWrap: true,
+        //     wordWrapWidth: 40
+        // });
+        // label.anchor.set(0.5);
+        // enemyContainer.addChild(label);
 
-        // Position enemy
-        enemy.x = Math.random() * (GAME_WIDTH - 50) + 25;
-        enemy.y = 50;
-        playerEnemyContainer.addChild(enemy);
-        enemies.push(enemy);
+        // Position enemyContainer
+        enemyContainer.x = Math.random() * (GAME_WIDTH - 50) + 25;
+        enemyContainer.y = 50;
+        playerEnemyContainer.addChild(enemyContainer);
+        enemies.push(enemyContainer);
 
         // Small pulse animation
         // Define the pulsating function
         const pulse = () => {
-            if (!enemy.parent) return; // guard if already removed
-            enemy.scale.x = 1 + 0.1 * Math.sin(app.ticker.lastTime / 200);
-            enemy.scale.y = 1 + 0.1 * Math.sin(app.ticker.lastTime / 200);
+            if (!enemyContainer.parent) return; // guard if already removed
+            enemyContainer.scale.x = 1 + 0.1 * Math.sin(app.ticker.lastTime / 200);
+            enemyContainer.scale.y = 1 + 0.1 * Math.sin(app.ticker.lastTime / 200);
         };
     
         // Attach it
         app.ticker.add(pulse);
 
         // When enemy is killed:
-        enemy.on('removed', () => {
+        enemyContainer.on('removed', () => {
             app.ticker.remove(pulse); // cleanup
         });
 
         // Shoot bullets every 1.5s
-        enemy.shootInterval = setInterval(() => {
-            if (!enemy.destroyed && !gameOver) {
-                spawnEnemyBullet(enemy);
+        enemyContainer.shootInterval = setInterval(() => {
+            if (!enemyContainer.destroyed && !gameOver) {
+                spawnEnemyBullet(enemyContainer);
             }
         }, 1500);
     }
