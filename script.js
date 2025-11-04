@@ -107,22 +107,33 @@
     const collectibles = [];
     const enemyBullets = [];
 
+    // // Background
+    // const bg = new PIXI.Graphics();
+    // const gradient = app.renderer.generateTexture((() => {
+    //     const g = new PIXI.Graphics();
+    //     g.beginTextureFill({ color: 0x111827 });
+    //     g.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    //     g.endFill();
+    //     g.beginTextureFill({ color: 0x000000, alpha: 0.5 });
+    //     g.drawRect(0, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT / 2);
+    //     g.endFill();
+    //     return g;
+    // })());
+    // bg.beginTextureFill({ texture: gradient });
+    // bg.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    // bg.endFill();
+    // app.stage.addChildAt(bg, 0); // send to back
+
     // Background
-    const bg = new PIXI.Graphics();
-    const gradient = app.renderer.generateTexture((() => {
-        const g = new PIXI.Graphics();
-        g.beginTextureFill({ color: 0x111827 });
-        g.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-        g.endFill();
-        g.beginTextureFill({ color: 0x000000, alpha: 0.5 });
-        g.drawRect(0, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT / 2);
-        g.endFill();
-        return g;
-    })());
-    bg.beginTextureFill({ texture: gradient });
-    bg.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    bg.endFill();
-    app.stage.addChildAt(bg, 0); // send to back
+    const backgroundTexture = PIXI.Texture.from("assets/game-scene-bg.png");
+    const backgroundSprite = new PIXI.Sprite(backgroundTexture);
+
+    // Resize to fit game scene
+    backgroundSprite.width = GAME_WIDTH;
+    backgroundSprite.height = GAME_HEIGHT;
+
+    // Add to stage (at the very back)
+    app.stage.addChildAt(backgroundSprite, 0);
 
     // Game Scenes
     const startScene = new PIXI.Container();
