@@ -353,11 +353,11 @@
         }else if (emotion == "Anxiety"){
             enemyTexture = PIXI.Texture.from('assets/anxiety-sprite.png');
         }else if (emotion == "Anger"){
-            enemyTexture = PIXI.Texture.from('assets/fear-sprite.png');
+            enemyTexture = PIXI.Texture.from('assets/anger-sprite.png');
         }else if (emotion == "Despair"){
-            enemyTexture = PIXI.Texture.from('assets/anxiety-sprite.png');
+            enemyTexture = PIXI.Texture.from('assets/despair-sprite.png');
         }else if (emotion == "Guilt"){
-            enemyTexture = PIXI.Texture.from('assets/fear-sprite.png');
+            enemyTexture = PIXI.Texture.from('assets/guilt-sprite.png');
         }
         const enemySprite = new PIXI.Sprite(enemyTexture);
 
@@ -368,24 +368,6 @@
 
         enemyContainer.addChild(enemySprite);
         
-        // const label = new PIXI.Text(emotion, {
-        //     fill: "#ffffff",
-        //     fontSize: 14,
-        //     fontWeight: "bold",
-        //     fontFamily: "Orbitron",
-        //     stroke: "#000000",
-        //     strokeThickness: 3,
-        //     dropShadow: true,
-        //     dropShadowColor: "#000000",
-        //     dropShadowBlur: 4,
-        //     dropShadowDistance: 2,
-        //     align: "center",
-        //     wordWrap: true,
-        //     wordWrapWidth: 40
-        // });
-        // label.anchor.set(0.5);
-        // enemyContainer.addChild(label);
-
         // Position enemyContainer
         enemyContainer.x = Math.random() * (GAME_WIDTH - 50) + 25;
         enemyContainer.y = 50;
@@ -727,7 +709,7 @@
         gameOverScene.addChild(labelText, valueText);
 
         // Leaderboard title
-        const lbTitle = new PIXI.Text("🏆 Top 5 Soldiers 🏆", {
+        const lbTitle = new PIXI.Text("Top 5 Soldiers", {
             fill: "#ffff00",
             fontSize: 32,
             fontWeight: "bold",
@@ -737,6 +719,22 @@
         lbTitle.x = GAME_WIDTH / 2;
         lbTitle.y = 210;
         gameOverScene.addChild(lbTitle);
+
+        const endgameSpriteTexture = PIXI.Texture.from('assets/soldier-sprite-endgame.png');
+
+        const endgameSpriteLeft = new PIXI.Sprite(endgameSpriteTexture);
+        endgameSpriteLeft.anchor.set(1,0.5);
+        endgameSpriteLeft.scale.set(0.07);
+        endgameSpriteLeft.x = (GAME_WIDTH - lbTitle.width) / 2;
+        endgameSpriteLeft.y = 210;
+        gameOverScene.addChild(endgameSpriteLeft);
+
+        const endgameSpriteRight = new PIXI.Sprite(endgameSpriteTexture);
+        endgameSpriteRight.anchor.set(0,0.5);
+        endgameSpriteRight.scale.set(0.07);
+        endgameSpriteRight.x = (GAME_WIDTH + lbTitle.width) / 2;
+        endgameSpriteRight.y = 210;
+        gameOverScene.addChild(endgameSpriteRight);
 
         // Leaderboard
         const leaderboardContainer = new PIXI.Container();
