@@ -107,23 +107,6 @@
     const collectibles = [];
     const enemyBullets = [];
 
-    // // Background
-    // const bg = new PIXI.Graphics();
-    // const gradient = app.renderer.generateTexture((() => {
-    //     const g = new PIXI.Graphics();
-    //     g.beginTextureFill({ color: 0x111827 });
-    //     g.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    //     g.endFill();
-    //     g.beginTextureFill({ color: 0x000000, alpha: 0.5 });
-    //     g.drawRect(0, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT / 2);
-    //     g.endFill();
-    //     return g;
-    // })());
-    // bg.beginTextureFill({ texture: gradient });
-    // bg.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    // bg.endFill();
-    // app.stage.addChildAt(bg, 0); // send to back
-
     // Background
     const backgroundTexture = PIXI.Texture.from("assets/game-scene-bg.png");
     const backgroundSprite = new PIXI.Sprite(backgroundTexture);
@@ -669,6 +652,23 @@
         playerEnemyContainer.visible = false;
         gameOverScene.removeChildren();
         gameOverScene.visible = true;
+
+        // End game background
+        const endBg = new PIXI.Graphics();
+        const gradient = app.renderer.generateTexture((() => {
+            const g = new PIXI.Graphics();
+            g.beginTextureFill({ color: 0x111827, alpha: 0.8 });
+            g.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            g.endFill();
+            g.beginTextureFill({ color: 0x000000, alpha: 0.5 });
+            g.drawRect(0, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT / 2);
+            g.endFill();
+            return g;
+        })());
+        endBg.beginTextureFill({ texture: gradient });
+        endBg.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        endBg.endFill();
+        gameOverScene.addChild(endBg);
 
         // Mission Complete / Failed
         const msg = win ? "Mission Complete!" : "Mission Failed";
