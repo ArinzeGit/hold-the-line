@@ -131,7 +131,7 @@
 
     const gameOverScene = new PIXI.Container();
 
-    app.stage.addChild(startScene, gameScene, gameOverScene);
+    app.stage.addChild(startScene, gameOverScene, gameScene);
     startScene.visible = true;
     gameScene.visible = false;
     gameOverScene.visible = false;
