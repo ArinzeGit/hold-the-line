@@ -24,6 +24,10 @@
     };
     const BUTTON_SIZE = 100;
     const BTN_PADDING = BUTTON_SIZE * 0.2;
+    const shootSound = new Howl({
+        src: ['/assets/sounds/player-gunshot.wav'],
+        volume: 0.6
+    });
 
     // Placeholder leaderboard
     let leaderboard = [
@@ -343,15 +347,15 @@
         // Enemy sprite
         let enemyTexture;
         if (emotion == "Fear"){
-            enemyTexture = PIXI.Texture.from('assets/fear-sprite.png');
+            enemyTexture = PIXI.Texture.from('assets/enemy-sprites/fear-sprite.png');
         }else if (emotion == "Anxiety"){
-            enemyTexture = PIXI.Texture.from('assets/anxiety-sprite.png');
+            enemyTexture = PIXI.Texture.from('assets/enemy-sprites/anxiety-sprite.png');
         }else if (emotion == "Anger"){
-            enemyTexture = PIXI.Texture.from('assets/anger-sprite.png');
+            enemyTexture = PIXI.Texture.from('assets/enemy-sprites/anger-sprite.png');
         }else if (emotion == "Despair"){
-            enemyTexture = PIXI.Texture.from('assets/despair-sprite.png');
+            enemyTexture = PIXI.Texture.from('assets/enemy-sprites/despair-sprite.png');
         }else if (emotion == "Guilt"){
-            enemyTexture = PIXI.Texture.from('assets/guilt-sprite.png');
+            enemyTexture = PIXI.Texture.from('assets/enemy-sprites/guilt-sprite.png');
         }
         const enemySprite = new PIXI.Sprite(enemyTexture);
 
@@ -432,6 +436,7 @@
         proj.y = player.y - 97;
         bulletCollectibleContainer.addChild(proj);
         projectiles.push(proj);
+        shootSound.play();
     }
 
     // Collision check
