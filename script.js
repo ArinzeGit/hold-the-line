@@ -30,6 +30,12 @@
     const enemyDeathSound = new Howl({
         src: ['/assets/sounds/quick-knife-slice-cutting.wav']
     });
+    const winSound = new Howl({
+        src: ['/assets/sounds/winning-chimes.wav']
+    });
+    const loseSound = new Howl({
+        src: ['/assets/sounds/circus-lose.wav']
+    });
 
     // Placeholder leaderboard
     let leaderboard = [
@@ -653,6 +659,7 @@
 
     // End game
     function endGame(win) {
+        win? winSound.play() : loseSound.play();
         stopSpawning();
         gameOver = true;
         bulletCollectibleContainer.visible = false;
@@ -945,6 +952,7 @@
         backToMenu.on("pointerover", () => backToMenu.style.fill = "#ffff66");
         backToMenu.on("pointerout", () => backToMenu.style.fill = "#ffffff");
         backToMenu.on("pointerdown", () => {
+            cleanUnsavedEntries();
             gameOverScene.visible = false;
             gameScene.visible = false;
             startScene.visible = true;
@@ -1021,6 +1029,12 @@
             letter.style.fill = "#555"; 
         });
 
+        cleanUnsavedEntries();
+
+        startSpawning();
+    }
+
+    function cleanUnsavedEntries() {
         // Clear any existing input boxes and save buttons 
         document.querySelectorAll(".lb-input, .lb-save").forEach(el => el.remove());
 
@@ -1029,7 +1043,5 @@
         leaderboard.forEach(entry => {
             if (entry.pending) delete entry.pending;
         });
-
-        startSpawning();
     }
 })();
