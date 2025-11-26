@@ -642,8 +642,9 @@
         activeInput.style.left = canvasRect.left + globalInputPosition.x * 1.07 + "px"; // *1.07 offset to align with text
         activeInput.style.top = canvasRect.top + globalInputPosition.y + "px";
         activeInput.style.transform = "translateY(-50%)"; // vertical centering
-        activeInput.style.width = (screenWidth * 0.75) + "px"; // *0.75 to leave room for score
-        activeInput.style.fontSize = `${24 * scale}px`;
+        activeInput.style.width = (screenWidth * 0.73) + "px"; // *0.73 to leave room for score
+        activeInput.style.fontSize = `${22 * scale}px`;
+        activeInput.style.padding = "0 5px";
         saveButton.style.left = canvasRect.left + globalInputEndPosition.x * 1.02 + "px";
         saveButton.style.top = canvasRect.top + globalInputPosition.y + "px";
         saveButton.style.transform = "translateY(-50%)"; // vertical centering
@@ -774,7 +775,7 @@
         if (qualifies) {
             leaderboardApplauseSound.play();
             // Insert placeholder with a marker until we collect name
-            leaderboard.push({ name: "???", score, pending: true });
+            leaderboard.push({ name: " ???", score, pending: true });
             leaderboard.sort((a, b) => b.score - a.score);
             leaderboard = leaderboard.slice(0, 5);
         }
