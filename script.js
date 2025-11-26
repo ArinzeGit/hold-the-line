@@ -25,8 +25,10 @@
     const BUTTON_SIZE = 100;
     const BTN_PADDING = BUTTON_SIZE * 0.2;
     const shootSound = new Howl({
-        src: ['/assets/sounds/player-gunshot.wav'],
-        volume: 0.6
+        src: ['/assets/sounds/short-laser-gun-shot.wav']
+    });
+    const enemyDeathSound = new Howl({
+        src: ['/assets/sounds/quick-knife-slice-cutting.wav']
     });
 
     // Placeholder leaderboard
@@ -504,7 +506,7 @@
                     en.destroy();
                     clearInterval(en.shootInterval); // stop shooting
                     enemies.splice(i, 1);
-
+                    enemyDeathSound.play();
                     bulletCollectibleContainer.removeChild(pr);
                     pr.destroy();
                     projectiles.splice(j, 1);
