@@ -36,6 +36,9 @@
     const loseSound = new Howl({
         src: ['/assets/sounds/circus-lose.wav']
     });
+    const leaderboardApplauseSound = new Howl({
+        src: ['/assets/sounds/auditorium-moderate-applause-and-cheering.wav']
+    });
 
     // Placeholder leaderboard
     let leaderboard = [
@@ -769,6 +772,7 @@
         const worstEntry = leaderboard[leaderboard.length - 1];
         let qualifies = score > worstEntry.score;
         if (qualifies) {
+            leaderboardApplauseSound.play();
             // Insert placeholder with a marker until we collect name
             leaderboard.push({ name: "???", score, pending: true });
             leaderboard.sort((a, b) => b.score - a.score);
