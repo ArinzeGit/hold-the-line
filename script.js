@@ -22,8 +22,6 @@
         "Despair": 0x8A2BE2,  //purple
         "Guilt": 0x00D1A0  //green
     };
-    const BUTTON_SIZE = 100;
-    const BTN_PADDING = BUTTON_SIZE * 0.2;
     const shootSound = new Howl({
         src: ['/assets/sounds/short-laser-gun-shot.wav']
     });
@@ -138,11 +136,10 @@
 
     const gameScene = new PIXI.Container();
     // containers for layering
-    const backgroundContainer = new PIXI.Container();
     const bulletCollectibleContainer = new PIXI.Container();
     const playerEnemyContainer = new PIXI.Container();
     const uiContainer = new PIXI.Container();
-    gameScene.addChild(backgroundContainer, bulletCollectibleContainer, playerEnemyContainer, uiContainer);
+    gameScene.addChild(bulletCollectibleContainer, playerEnemyContainer, uiContainer);
 
     const gameOverScene = new PIXI.Container();
 
@@ -240,91 +237,81 @@
     window.addEventListener("keydown", e => keys[e.code] = true);
     window.addEventListener("keyup", e => keys[e.code] = false);
 
-    // Create mobile controls if on a touch device
-    function createButton(label, color, x, y, onPress, onRelease) {
-        const btn = new PIXI.Container();
+    //  MOBILE TOUCH CONTROLS
+    // Track one movement finger + multi-touch
+    let movementTouchId = null;
+    let lastTouchX = null;
 
-        // Glow background (soft halo)
-        const glow = new PIXI.Graphics()
-            .beginFill(color, 0.15)
-            .drawCircle(0, 0, BUTTON_SIZE * 1.2)
-            .endFill();
-        glow.alpha = 0.4;
+    // Create full-screen invisible layer to capture touches
+    const inputLayer = new PIXI.Graphics();
+    inputLayer.interactive = true;
+    inputLayer.hitArea = new PIXI.Rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-        // Outer outline
-        const outer = new PIXI.Graphics()
-            .lineStyle(4, color, 0.9)       // border
-            .beginFill(0x000000, 0.15)      // subtle transparency inside
-            .drawCircle(0, 0, BUTTON_SIZE)
-            .endFill();
+    inputLayer.on("pointerdown", onTouchStart);
+    inputLayer.on("pointermove", onTouchMove);
+    inputLayer.on("pointerup", onTouchEnd);
+    inputLayer.on("pointerupoutside", onTouchEnd);
+    inputLayer.on("pointercancel", onTouchEnd);
 
-        // Label (cleaner + holographic stroke)
-        const text = new PIXI.Text(label, {
-            fontSize: 38,
-            fill: color,
-            fontWeight: "900",
-            stroke: 0x000000,
-            strokeThickness: 5
-        });
-        text.anchor.set(0.5);
+    gameScene.addChild(inputLayer);
 
-        btn.addChild(glow, outer, text);
-        btn.x = x;
-        btn.y = y;
-        btn.interactive = true;
-        btn.cursor = "pointer";
+    // Decide zones
+    function getHalfWidth() {
+        return app.renderer.width / 2;
+    }
 
-        // Scale animation on press
-        let targetScale = 1;
-        function animateScale() {
-            btn.scale.x += (targetScale - btn.scale.x) * 0.3;
-            btn.scale.y += (targetScale - btn.scale.y) * 0.3;
+    function getTouchX(e) {
+        return e.data.global.x;
+    }
+
+    function onTouchStart(e) {
+        const id = e.data.pointerId;
+        const x = getTouchX(e);
+
+        const HALF_WIDTH = getHalfWidth();
+
+        // LEFT HALF → movement
+        if (x < HALF_WIDTH && movementTouchId === null) {
+            movementTouchId = id;
+            lastTouchX = x;
         }
-        PIXI.Ticker.shared.add(animateScale);
-
-        btn.on("pointerdown", () => {
-            targetScale = 0.85;  // shrink slightly
-            glow.alpha = 0.7;    // brighten glow
-            onPress();
-        });
-        btn.on("pointerup", () => {
-            targetScale = 1;
-            glow.alpha = 0.4;    // reset glow
-            onRelease();
-        });
-        btn.on("pointerupoutside", () => {
-            targetScale = 1;
-            glow.alpha = 0.4;
-            onRelease();
-        });
-
-        return btn;
+        // RIGHT HALF → shoot (tap)
+        else if (x >= HALF_WIDTH) {
+            shootProjectile();
+        }
     }
 
-    function createMobileControls() {
-        // Left
-        const leftBtn = createButton("◀", 0x06D6A0, BTN_PADDING + BUTTON_SIZE, GAME_HEIGHT - BUTTON_SIZE - BTN_PADDING,
-            () => keys["ArrowLeft"] = true,
-            () => keys["ArrowLeft"] = false
-        );
+    function onTouchMove(e) {
+        const id = e.data.pointerId;
+        if (id !== movementTouchId) return;
 
-        // Right
-        const rightBtn = createButton("▶", 0x06D6A0, BTN_PADDING * 2 + BUTTON_SIZE * 3, GAME_HEIGHT - BUTTON_SIZE - BTN_PADDING,
-            () => keys["ArrowRight"] = true,
-            () => keys["ArrowRight"] = false
-        );
+        const x = getTouchX(e);
+        const dx = x - lastTouchX;
 
-        // Shoot
-        const shootBtn = createButton("●", 0xEF233C, GAME_WIDTH - BTN_PADDING - BUTTON_SIZE, GAME_HEIGHT - BUTTON_SIZE - BTN_PADDING,
-            () => keys["Space"] = true,
-            () => keys["Space"] = false
-        );
+        if (dx > 0) {
+            // move right
+            keys["ArrowRight"] = true;
+            keys["ArrowLeft"] = false;
+        } else if (dx < 0) {
+            // move left
+            keys["ArrowLeft"] = true;
+            keys["ArrowRight"] = false;
+        }
 
-        bulletCollectibleContainer.addChild(leftBtn, rightBtn, shootBtn);
+        lastTouchX = x;
     }
 
-    if ('ontouchstart' in window || navigator.maxTouchPoints) {
-        createMobileControls();
+    function onTouchEnd(e) {
+        const id = e.data.pointerId;
+
+        if (id === movementTouchId) {
+            // stop movement
+            keys["ArrowLeft"] = false;
+            keys["ArrowRight"] = false;
+
+            movementTouchId = null;
+            lastTouchX = null;
+        }
     }
 
     // Game Scene
@@ -668,6 +655,7 @@
         gameOver = true;
         bulletCollectibleContainer.visible = false;
         playerEnemyContainer.visible = false;
+        inputLayer.visible = false;
         gameOverScene.removeChildren();
         gameOverScene.visible = true;
 
@@ -1003,9 +991,9 @@
 
         startScene.visible = false;
         gameScene.visible = true;
-        backgroundContainer.visible = true;
         bulletCollectibleContainer.visible = true;
         playerEnemyContainer.visible = true;
+        inputLayer.visible = true;
         uiContainer.visible = true;
         gameOverScene.visible = false;
 
