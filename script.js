@@ -245,7 +245,7 @@
     // Create full-screen invisible layer to capture touches
     const inputLayer = new PIXI.Graphics();
     inputLayer.interactive = true;
-    inputLayer.hitArea = new PIXI.Rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    inputLayer.hitArea = new PIXI.Rectangle(0, 0, app.renderer.width, app.renderer.height);
 
     inputLayer.on("pointerdown", onTouchStart);
     inputLayer.on("pointermove", onTouchMove);
