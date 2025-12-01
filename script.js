@@ -44,7 +44,7 @@
         { name: "Bob", score: 38 },
         { name: "Charlie", score: 33 },
         { name: "Dana", score: 28 },
-        { name: "Eli", score: 23 },
+        { name: "Eli", score: 10 },
     ];
 
     // App setup
@@ -245,7 +245,7 @@
     // Create full-screen invisible layer to capture touches
     const inputLayer = new PIXI.Graphics();
     inputLayer.interactive = true;
-    inputLayer.hitArea = new PIXI.Rectangle(0, 0, app.renderer.width, app.renderer.height);
+    inputLayer.hitArea = new PIXI.Rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
     inputLayer.on("pointerdown", onTouchStart);
     inputLayer.on("pointermove", onTouchMove);
@@ -257,11 +257,12 @@
 
     // Decide zones
     function getHalfWidth() {
-        return app.renderer.width / 2;
+        return GAME_WIDTH / 2;
     }
 
     function getTouchX(e) {
-        return e.data.global.x;
+        const local = app.stage.toLocal(e.data.global);
+        return local.x;
     }
 
     function onTouchStart(e) {
