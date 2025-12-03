@@ -31,6 +31,9 @@
     const gotCollectibleSound = new Howl({
         src: ['/assets/sounds/sparkle-hybrid-transition.wav']
     });
+    const playerDeathSound = new Howl({
+        src: ['/assets/sounds/male-death-sound.wav']
+    });
     const winSound = new Howl({
         src: ['/assets/sounds/winning-chimes.wav']
     });
@@ -530,6 +533,7 @@
 
             // Hit player
             if (hitTest(player, b)) {
+                playerDeathSound.play();
                 // endGame(true); // For testing win scenario. Normally would be:
                 endGame(false);
             }
