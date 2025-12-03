@@ -28,6 +28,9 @@
     const enemyDeathSound = new Howl({
         src: ['/assets/sounds/quick-knife-slice-cutting.wav']
     });
+    const gotCollectibleSound = new Howl({
+        src: ['/assets/sounds/sparkle-hybrid-transition.wav']
+    });
     const winSound = new Howl({
         src: ['/assets/sounds/winning-chimes.wav']
     });
@@ -550,6 +553,7 @@
             if (hitTest(player, c)) {
                 if (!collectedLetters.has(c.letter)) {
                     collectedLetters.add(c.letter);
+                    gotCollectibleSound.play();
 
                     // Update that letter’s color
                     for (let i = 0; i < TARGET_WORD.length; i++) {
