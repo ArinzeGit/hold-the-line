@@ -34,6 +34,9 @@
     const playerDeathSound = new Howl({
         src: ['/assets/sounds/male-death-sound.wav']
     });
+    const countdownSound = new Howl({
+        src: ['/assets/sounds/countdown-from-10.wav']
+    });
     const winSound = new Howl({
         src: ['/assets/sounds/winning-chimes.wav']
     });
@@ -119,6 +122,7 @@
     let gameOver = false;
     let startTime = 0;
     let elapsedTime = 0; // in seconds
+    let isCountdownPlaying = false;
 
      // Arrays
     const projectiles = [];
@@ -462,6 +466,10 @@
         // Update timer
         elapsedTime = Math.floor((Date.now() - startTime) / 1000);
         timerText.text = `Time left: ${60 - elapsedTime}s`;
+        if (elapsedTime >= 50 && !isCountdownPlaying) {
+            countdownSound.play();
+            isCountdownPlaying = true;
+        }
         if (elapsedTime >= 60) {
             timerText.text = `Time up!`;
             endGame(false);
@@ -1012,6 +1020,7 @@
         gameOver = false;
         startTime = Date.now();
         elapsedTime = 0;
+        isCountdownPlaying = false;
         
         // Remove old objects
         [...projectiles, ...enemies, ...collectibles, ...enemyBullets].forEach(obj => {
