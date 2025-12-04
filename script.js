@@ -43,6 +43,9 @@
     const loseSound = new Howl({
         src: ['/assets/sounds/circus-lose.wav']
     });
+    const congratulations = new Howl({
+        src: ['/assets/sounds/congratulations.wav']
+    });
     const leaderboardApplauseSound = new Howl({
         src: ['/assets/sounds/auditorium-moderate-applause-and-cheering.wav']
     });
@@ -667,7 +670,9 @@
 
     // End game
     function endGame(win) {
-        win? winSound.play() : loseSound.play();
+        win ? (setTimeout(() => {
+            congratulations.play();
+        }, 1000),winSound.play()) : loseSound.play();
         stopSpawning();
         gameOver = true;
         bulletCollectibleContainer.visible = false;
