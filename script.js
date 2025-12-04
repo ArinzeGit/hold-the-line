@@ -12,6 +12,7 @@
     const PROJECTILE_SPEED = 8;
     const COLLECTIBLE_SPEED = 2;
     const TARGET_WORD = "SOLDIER";
+    const overlay = document.getElementById("touch-overlay");
     const MOVE_THRESHOLD = 10; // pixels
     const NEGATIVE_EMOTIONS = [
         "Fear", "Anxiety", "Anger", "Despair", "Guilt"
@@ -164,6 +165,7 @@
     startScene.visible = true;
     gameScene.visible = false;
     gameOverScene.visible = false;
+    disableOverlay();
 
     app.ticker.add(() => {
         startBG.alpha = 0.95 + Math.sin(Date.now() / 600) * 0.5;
@@ -254,69 +256,76 @@
     window.addEventListener("keydown", e => keys[e.code] = true);
     window.addEventListener("keyup", e => keys[e.code] = false);
 
-    //  MOBILE TOUCH CONTROLS
-    // Track one movement finger + multi-touch
+    //  FULLSCREEN TOUCH CONTROLS (DOM OVERLAY + PIXI)
+
+    // Tracking movement finger
     let movementTouchId = null;
     let lastTouchX = null;
 
-    // Create full-screen invisible layer to capture touches
-    const inputLayer = new PIXI.Graphics();
-    inputLayer.interactive = true;
-    inputLayer.hitArea = new PIXI.Rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    function enableOverlay() {
+        overlay.style.pointerEvents = "auto";
+    }
 
-    inputLayer.on("pointerdown", onTouchStart);
-    inputLayer.on("pointermove", onTouchMove);
-    inputLayer.on("pointerup", onTouchEnd);
-    inputLayer.on("pointerupoutside", onTouchEnd);
-    inputLayer.on("pointercancel", onTouchEnd);
+    function disableOverlay() {
+        overlay.style.pointerEvents = "none";
+    }
 
-    gameScene.addChild(inputLayer);
+    // Add event listeners
+    overlay.addEventListener("pointerdown", onDomTouchStart);
+    overlay.addEventListener("pointermove", onDomTouchMove);
+    overlay.addEventListener("pointerup", onDomTouchEnd);
+    overlay.addEventListener("pointercancel", onDomTouchEnd);
+    overlay.addEventListener("pointerupoutside", onDomTouchEnd);
+
+    // Convert screen global coords to PIXI local/stage coords
+    function screenToLocalX(screenX, screenY) {
+        const pos = { x: 0, y: 0 };
+
+        // Convert screen global coords → PIXI global coords
+        app.renderer.events.mapPositionToPoint(pos, screenX, screenY);
+
+        // Convert PIXI global coords → PIXI local/stage coords
+        const local = app.stage.toLocal(pos);
+        return local.x;
+    }
 
     // Decide zones
     function getHalfWidth() {
         return GAME_WIDTH / 2;
     }
 
-    function getTouchX(e) {
-        const local = app.stage.toLocal(e.data.global);
-        return local.x;
-    }
+    // TOUCH START
+    function onDomTouchStart(e) {
+        const id = e.pointerId;
 
-    function onTouchStart(e) {
-        const id = e.data.pointerId;
-        const x = getTouchX(e);
+        // Convert to PIXI stage coordinates
+        const localX = screenToLocalX(e.clientX, e.clientY);
+        const half = getHalfWidth();
 
-        const HALF_WIDTH = getHalfWidth();
-
-        // LEFT HALF → movement
-        if (x < HALF_WIDTH && movementTouchId === null) {
+        if (localX < half && movementTouchId === null) {
+            // LEFT SIDE → movement
             movementTouchId = id;
-            lastTouchX = x;
-        }
-        // RIGHT HALF → shoot (tap)
-        else if (x >= HALF_WIDTH) {
+            lastTouchX = localX;
+        } else {
+            // RIGHT SIDE → shoot
             shootProjectile();
         }
     }
 
-    function onTouchMove(e) {
-        const id = e.data.pointerId;
+    // TOUCH MOVE
+    function onDomTouchMove(e) {
+        const id = e.pointerId;
         if (id !== movementTouchId) return;
 
-        const x = getTouchX(e);
+        const x = screenToLocalX(e.clientX, e.clientY);
         const dx = x - lastTouchX;
 
-        if (Math.abs(dx) < MOVE_THRESHOLD) {
-            // Movement too small — ignore it
-            return;
-        }
+        if (Math.abs(dx) < MOVE_THRESHOLD) return;
 
         if (dx > 0) {
-            // move right
             keys["ArrowRight"] = true;
             keys["ArrowLeft"] = false;
-        } else if (dx < 0) {
-            // move left
+        } else {
             keys["ArrowLeft"] = true;
             keys["ArrowRight"] = false;
         }
@@ -324,14 +333,13 @@
         lastTouchX = x;
     }
 
-    function onTouchEnd(e) {
-        const id = e.data.pointerId;
+    // TOUCH END
+    function onDomTouchEnd(e) {
+        const id = e.pointerId;
 
         if (id === movementTouchId) {
-            // stop movement
             keys["ArrowLeft"] = false;
             keys["ArrowRight"] = false;
-
             movementTouchId = null;
             lastTouchX = null;
         }
@@ -690,7 +698,7 @@
         gameOver = true;
         bulletCollectibleContainer.visible = false;
         playerEnemyContainer.visible = false;
-        inputLayer.visible = false;
+        disableOverlay();
         gameOverScene.removeChildren();
         gameOverScene.visible = true;
 
@@ -1028,7 +1036,7 @@
         gameScene.visible = true;
         bulletCollectibleContainer.visible = true;
         playerEnemyContainer.visible = true;
-        inputLayer.visible = true;
+        enableOverlay();
         uiContainer.visible = true;
         gameOverScene.visible = false;
 
