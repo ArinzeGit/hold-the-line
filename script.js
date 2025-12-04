@@ -12,6 +12,7 @@
     const PROJECTILE_SPEED = 8;
     const COLLECTIBLE_SPEED = 2;
     const TARGET_WORD = "SOLDIER";
+    const MOVE_THRESHOLD = 10; // pixels
     const NEGATIVE_EMOTIONS = [
         "Fear", "Anxiety", "Anger", "Despair", "Guilt"
     ];
@@ -304,6 +305,11 @@
 
         const x = getTouchX(e);
         const dx = x - lastTouchX;
+
+        if (Math.abs(dx) < MOVE_THRESHOLD) {
+            // Movement too small — ignore it
+            return;
+        }
 
         if (dx > 0) {
             // move right
