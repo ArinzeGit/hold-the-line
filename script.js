@@ -484,6 +484,7 @@
         }
         if (elapsedTime >= 60) {
             timerText.text = `Time up!`;
+            isCountdownPlaying = false;
             endGame(false);
             return;
         }
@@ -679,6 +680,7 @@
 
     // End game
     function endGame(win) {
+        isCountdownPlaying? (countdownSound.stop(),isCountdownPlaying = false) : null;
         win ? (setTimeout(() => {
             congratulationsSound.play();
         }, 1000),winSound.play()) : (setTimeout(() => {
@@ -1036,7 +1038,6 @@
         gameOver = false;
         startTime = Date.now();
         elapsedTime = 0;
-        isCountdownPlaying = false;
         
         // Remove old objects
         [...projectiles, ...enemies, ...collectibles, ...enemyBullets].forEach(obj => {
