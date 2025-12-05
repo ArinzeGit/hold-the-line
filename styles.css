@@ -23,6 +23,11 @@ html, body {
   height: 100vh;
   z-index: 9999; /* above canvas */
   touch-action: none; /* prevent browser gestures */
+  -webkit-tap-highlight-color: transparent; /* Removes blue tap highlight on mobile */
+  user-select: none; /* Prevents selection highlight */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 #game-container {
