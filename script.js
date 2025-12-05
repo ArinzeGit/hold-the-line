@@ -61,7 +61,7 @@
         { name: "Bob", score: 38 },
         { name: "Charlie", score: 33 },
         { name: "Dana", score: 28 },
-        { name: "Eli", score: 10 },
+        { name: "Eli", score: 23 },
     ];
 
     // App setup
