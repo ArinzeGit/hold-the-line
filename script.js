@@ -24,6 +24,11 @@
         "Despair": 0x8A2BE2,  //purple
         "Guilt": 0x00D1A0  //green
     };
+    const backgroundMusic = new Howl({
+        src: ['/assets/sounds/killer-by-manfred.mp3'],
+        loop: true,
+        volume: 1
+    });
     const shootSound = new Howl({
         src: ['/assets/sounds/short-laser-gun-shot.wav']
     });
@@ -166,6 +171,7 @@
     gameScene.visible = false;
     gameOverScene.visible = false;
     disableOverlay();
+    backgroundMusic.play();
 
     app.ticker.add(() => {
         startBG.alpha = 0.95 + Math.sin(Date.now() / 600) * 0.5;
@@ -698,9 +704,12 @@
         gameOver = true;
         bulletCollectibleContainer.visible = false;
         playerEnemyContainer.visible = false;
-        disableOverlay();
         gameOverScene.removeChildren();
         gameOverScene.visible = true;
+        disableOverlay();
+        setTimeout(() => {
+            backgroundMusic.play();
+        }, 2500)
 
         // End game background
         const endBg = new PIXI.Graphics();
@@ -1036,9 +1045,10 @@
         gameScene.visible = true;
         bulletCollectibleContainer.visible = true;
         playerEnemyContainer.visible = true;
-        enableOverlay();
         uiContainer.visible = true;
         gameOverScene.visible = false;
+        enableOverlay();
+        backgroundMusic.stop();
 
         // Reset variables
         collectedLetters.clear();
