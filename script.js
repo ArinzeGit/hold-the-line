@@ -39,26 +39,18 @@
     view.style.display = "block"; // removes inline gaps if parent uses inline-block
     document.getElementById("game-container").appendChild(view);
 
+    // Store initial viewport height to prevent issues with dynamic address bars/keyboards
+    let initialViewportHeight = window.innerHeight;
+    
     // Resize function (used for both loading and game)
-    function getViewportDimensions() {
-        // Use visualViewport API if available (more reliable on mobile)
-        if (window.visualViewport) {
-            return {
-                width: window.visualViewport.width,
-                height: window.visualViewport.height
-            };
-        }
-        // Fallback to documentElement.clientHeight (more stable than innerHeight)
-        return {
-            width: window.innerWidth,
-            height: document.documentElement.clientHeight || window.innerHeight
-        };
-    }
-
     function resize() {
-        const vp = getViewportDimensions();
-        const scaleX = vp.width / GAME_WIDTH;
-        const scaleY = vp.height / GAME_HEIGHT;
+        // Use the larger of initial height or current innerHeight to prevent cropping
+        // This handles Safari's address bar and Chrome's keyboard
+        const viewportHeight = Math.max(initialViewportHeight, window.innerHeight);
+        const viewportWidth = window.innerWidth;
+        
+        const scaleX = viewportWidth / GAME_WIDTH;
+        const scaleY = viewportHeight / GAME_HEIGHT;
         const scale = Math.min(scaleX, scaleY);
 
         const newWidth = Math.floor(GAME_WIDTH * scale);
@@ -66,14 +58,14 @@
 
         app.renderer.resize(newWidth, newHeight);
 
-        // Use viewport dimensions for centering
-        view.style.left = `${(vp.width - newWidth) / 2}px`;
-        view.style.top = `${(vp.height - newHeight) / 2}px`;
+        // Center using the actual window dimensions (not the stored height)
+        view.style.left = `${(window.innerWidth - newWidth) / 2}px`;
+        view.style.top = `${(window.innerHeight - newHeight) / 2}px`;
 
         app.stage.scale.set(scale);
     }
 
-    // Debounce resize to handle Safari's dynamic address bar
+    // Debounce resize to handle rapid viewport changes
     let resizeTimeout = null;
     function debouncedResize() {
         if (resizeTimeout) {
@@ -82,30 +74,35 @@
         resizeTimeout = setTimeout(() => {
             resize();
             resizeTimeout = null;
-        }, 100);
+        }, 150);
     }
 
-    // Initial resize with delay to let Safari viewport settle
+    // Initial resize
     resize();
-    setTimeout(resize, 100);
-    setTimeout(resize, 300);
+    
+    // Update initial height after a delay to capture stable viewport (Safari)
+    setTimeout(() => {
+        initialViewportHeight = Math.max(initialViewportHeight, window.innerHeight);
+        resize();
+    }, 500);
     
     window.addEventListener("resize", debouncedResize);
     window.addEventListener("orientationchange", () => {
-        // Immediate resize on orientation change, then debounced
-        resize();
-        setTimeout(resize, 300);
+        // Reset initial height on orientation change
+        setTimeout(() => {
+            initialViewportHeight = window.innerHeight;
+            resize();
+        }, 100);
     });
     
-    // Use visualViewport API if available for better mobile support
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener("resize", debouncedResize);
-        window.visualViewport.addEventListener("scroll", debouncedResize);
-    }
-    
-    // Handle keyboard show/hide on mobile (especially Chrome)
-    window.addEventListener("focus", debouncedResize);
-    window.addEventListener("blur", debouncedResize);
+    // Handle keyboard show/hide - update initial height when keyboard closes
+    let keyboardClosedHeight = null;
+    window.addEventListener("resize", () => {
+        // If viewport height increases, keyboard likely closed
+        if (window.innerHeight > initialViewportHeight) {
+            initialViewportHeight = window.innerHeight;
+        }
+    });
 
     // Create loading scene
     const loadingScene = new PIXI.Container();
@@ -260,8 +257,7 @@
     // Resize function is already defined above and event listeners are already attached
 
     function checkOrientation() {
-        const vp = getViewportDimensions();
-        const isPortrait = vp.height > vp.width;
+        const isPortrait = window.innerHeight > window.innerWidth;
         const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints;
 
         const overlay = document.getElementById("rotate-overlay");
