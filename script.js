@@ -40,9 +40,25 @@
     document.getElementById("game-container").appendChild(view);
 
     // Resize function (used for both loading and game)
+    function getViewportDimensions() {
+        // Use visualViewport API if available (more reliable on mobile)
+        if (window.visualViewport) {
+            return {
+                width: window.visualViewport.width,
+                height: window.visualViewport.height
+            };
+        }
+        // Fallback to documentElement.clientHeight (more stable than innerHeight)
+        return {
+            width: window.innerWidth,
+            height: document.documentElement.clientHeight || window.innerHeight
+        };
+    }
+
     function resize() {
-        const scaleX = window.innerWidth / GAME_WIDTH;
-        const scaleY = window.innerHeight / GAME_HEIGHT;
+        const vp = getViewportDimensions();
+        const scaleX = vp.width / GAME_WIDTH;
+        const scaleY = vp.height / GAME_HEIGHT;
         const scale = Math.min(scaleX, scaleY);
 
         const newWidth = Math.floor(GAME_WIDTH * scale);
@@ -50,15 +66,46 @@
 
         app.renderer.resize(newWidth, newHeight);
 
-        view.style.left = `${(window.innerWidth - newWidth) / 2}px`;
-        view.style.top = `${(window.innerHeight - newHeight) / 2}px`;
+        // Use viewport dimensions for centering
+        view.style.left = `${(vp.width - newWidth) / 2}px`;
+        view.style.top = `${(vp.height - newHeight) / 2}px`;
 
         app.stage.scale.set(scale);
     }
 
+    // Debounce resize to handle Safari's dynamic address bar
+    let resizeTimeout = null;
+    function debouncedResize() {
+        if (resizeTimeout) {
+            clearTimeout(resizeTimeout);
+        }
+        resizeTimeout = setTimeout(() => {
+            resize();
+            resizeTimeout = null;
+        }, 100);
+    }
+
+    // Initial resize with delay to let Safari viewport settle
     resize();
-    window.addEventListener("resize", resize);
-    window.addEventListener("orientationchange", resize);
+    setTimeout(resize, 100);
+    setTimeout(resize, 300);
+    
+    window.addEventListener("resize", debouncedResize);
+    window.addEventListener("orientationchange", () => {
+        // Immediate resize on orientation change, then debounced
+        resize();
+        setTimeout(resize, 300);
+    });
+    
+    // Use visualViewport API if available for better mobile support
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", debouncedResize);
+        window.visualViewport.addEventListener("scroll", debouncedResize);
+    }
+    
+    // Handle keyboard show/hide on mobile (especially Chrome)
+    window.addEventListener("focus", debouncedResize);
+    window.addEventListener("blur", debouncedResize);
 
     // Create loading scene
     const loadingScene = new PIXI.Container();
@@ -213,8 +260,9 @@
     // Resize function is already defined above and event listeners are already attached
 
     function checkOrientation() {
-        const isPortrait = window.innerHeight > window.innerWidth;
-        const isMobile ='ontouchstart' in window || navigator.maxTouchPoints
+        const vp = getViewportDimensions();
+        const isPortrait = vp.height > vp.width;
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints;
 
         const overlay = document.getElementById("rotate-overlay");
 
