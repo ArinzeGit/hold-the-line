@@ -39,6 +39,27 @@
     view.style.display = "block"; // removes inline gaps if parent uses inline-block
     document.getElementById("game-container").appendChild(view);
 
+    // Resize function (used for both loading and game)
+    function resize() {
+        const scaleX = window.innerWidth / GAME_WIDTH;
+        const scaleY = window.innerHeight / GAME_HEIGHT;
+        const scale = Math.min(scaleX, scaleY);
+
+        const newWidth = Math.floor(GAME_WIDTH * scale);
+        const newHeight = Math.floor(GAME_HEIGHT * scale);
+
+        app.renderer.resize(newWidth, newHeight);
+
+        view.style.left = `${(window.innerWidth - newWidth) / 2}px`;
+        view.style.top = `${(window.innerHeight - newHeight) / 2}px`;
+
+        app.stage.scale.set(scale);
+    }
+
+    resize();
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", resize);
+
     // Create loading scene
     const loadingScene = new PIXI.Container();
     const loadingText = new PIXI.Text("Loading...", {
@@ -189,31 +210,7 @@
     ];
 
     function initializeGame() {
-    // Resize function
-    function resize() {
-        // Compute scale
-        const scaleX = window.innerWidth / GAME_WIDTH;
-        const scaleY = window.innerHeight / GAME_HEIGHT;
-        const scale = Math.min(scaleX, scaleY);
-
-        // Compute the new render size
-        const newWidth = Math.floor(GAME_WIDTH * scale);
-        const newHeight = Math.floor(GAME_HEIGHT * scale);
-
-        // Resize the renderer
-        app.renderer.resize(newWidth, newHeight);
-
-        // Center the canvas
-        view.style.left = `${(window.innerWidth - newWidth) / 2}px`;
-        view.style.top = `${(window.innerHeight - newHeight) / 2}px`;
-
-        // Scale stage
-        app.stage.scale.set(scale);
-    }
-
-    resize();
-    window.addEventListener("resize", resize);
-    window.addEventListener("orientationchange", resize);
+    // Resize function is already defined above and event listeners are already attached
 
     function checkOrientation() {
         const isPortrait = window.innerHeight > window.innerWidth;
