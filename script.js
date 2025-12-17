@@ -239,6 +239,7 @@
     let startTime = 0;
     let elapsedTime = 0; // in seconds
     let isCountdownPlaying = false;
+    let backgroundMusicTimeout = null; // Track delayed background music timeout
 
      // Arrays
     const projectiles = [];
@@ -804,9 +805,15 @@
         gameOverScene.removeChildren();
         gameOverScene.visible = true;
         disableOverlay();
-        setTimeout(() => {
+        // Clear any existing timeout before setting a new one
+        if (backgroundMusicTimeout) {
+            clearTimeout(backgroundMusicTimeout);
+            backgroundMusicTimeout = null;
+        }
+        backgroundMusicTimeout = setTimeout(() => {
             backgroundMusic.play();
-        }, 2500)
+            backgroundMusicTimeout = null;
+        }, 2500);
 
         // End game background
         const endBg = new PIXI.Graphics();
@@ -1145,6 +1152,11 @@
         uiContainer.visible = true;
         gameOverScene.visible = false;
         enableOverlay();
+        // Clear the delayed background music timeout if it exists
+        if (backgroundMusicTimeout) {
+            clearTimeout(backgroundMusicTimeout);
+            backgroundMusicTimeout = null;
+        }
         backgroundMusic.stop();
 
         // Reset variables
