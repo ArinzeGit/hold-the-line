@@ -24,50 +24,6 @@
         "Despair": 0x8A2BE2,  //purple
         "Guilt": 0x00D1A0  //green
     };
-    const backgroundMusic = new Howl({
-        src: ['/assets/sounds/killer-by-manfred.mp3'],
-        loop: true,
-        volume: 1
-    });
-    const shootSound = new Howl({
-        src: ['/assets/sounds/short-laser-gun-shot.wav']
-    });
-    const enemyDeathSound = new Howl({
-        src: ['/assets/sounds/quick-knife-slice-cutting.wav']
-    });
-    const gotCollectibleSound = new Howl({
-        src: ['/assets/sounds/sparkle-hybrid-transition.wav']
-    });
-    const playerDeathSound = new Howl({
-        src: ['/assets/sounds/male-death-sound.wav']
-    });
-    const countdownSound = new Howl({
-        src: ['/assets/sounds/countdown-from-10.wav']
-    });
-    const winSound = new Howl({
-        src: ['/assets/sounds/winning-chimes.wav']
-    });
-    const loseSound = new Howl({
-        src: ['/assets/sounds/circus-lose.wav']
-    });
-    const congratulationsSound = new Howl({
-        src: ['/assets/sounds/congratulations.wav']
-    });
-    const missionFailedSound = new Howl({
-        src: ['/assets/sounds/mission-failed.wav']
-    });
-    const leaderboardApplauseSound = new Howl({
-        src: ['/assets/sounds/auditorium-moderate-applause-and-cheering.wav']
-    });
-
-    // Placeholder leaderboard
-    let leaderboard = [
-        { name: "Alice", score: 43 },
-        { name: "Bob", score: 38 },
-        { name: "Charlie", score: 33 },
-        { name: "Dana", score: 28 },
-        { name: "Eli", score: 23 },
-    ];
 
     // App setup
     const app = new PIXI.Application({
@@ -83,7 +39,157 @@
     view.style.display = "block"; // removes inline gaps if parent uses inline-block
     document.getElementById("game-container").appendChild(view);
 
+    // Create loading scene
+    const loadingScene = new PIXI.Container();
+    const loadingText = new PIXI.Text("Loading...", {
+        fill: "#ffffff",
+        fontSize: 36,
+        fontFamily: "Orbitron",
+        fontWeight: "bold"
+    });
+    loadingText.anchor.set(0.5);
+    loadingText.x = GAME_WIDTH / 2;
+    loadingText.y = GAME_HEIGHT / 2;
+    loadingScene.addChild(loadingText);
 
+    const progressText = new PIXI.Text("0%", {
+        fill: "#00ff66",
+        fontSize: 24,
+        fontFamily: "Orbitron"
+    });
+    progressText.anchor.set(0.5);
+    progressText.x = GAME_WIDTH / 2;
+    progressText.y = GAME_HEIGHT / 2 + 50;
+    loadingScene.addChild(progressText);
+
+    app.stage.addChild(loadingScene);
+    loadingScene.visible = true;
+
+    // Asset loading function
+    async function loadAllAssets() {
+        const assetPaths = [
+            'assets/game-scene-bg.png',
+            'assets/hold-the-line-art.png',
+            'assets/soldier-sprite-gamePlay.png',
+            'assets/soldier-sprite-endgame.png',
+            'assets/enemy-sprites/fear-sprite.png',
+            'assets/enemy-sprites/anxiety-sprite.png',
+            'assets/enemy-sprites/anger-sprite.png',
+            'assets/enemy-sprites/despair-sprite.png',
+            'assets/enemy-sprites/guilt-sprite.png'
+        ];
+
+        // Load textures using PIXI.Assets
+        const totalAssets = assetPaths.length;
+        let loadedAssets = 0;
+
+        // Update progress
+        const updateProgress = () => {
+            const percent = Math.floor((loadedAssets / totalAssets) * 100);
+            progressText.text = `${percent}%`;
+        };
+
+        // Load all textures
+        const texturePromises = assetPaths.map(path => {
+            return PIXI.Assets.load(path).then(() => {
+                loadedAssets++;
+                updateProgress();
+            });
+        });
+
+        await Promise.all(texturePromises);
+        console.log("All textures loaded");
+    }
+
+    // Sound loading function
+    function loadSounds() {
+        return new Promise((resolve) => {
+            const soundConfigs = [
+                { name: 'backgroundMusic', src: ['/assets/sounds/killer-by-manfred.mp3'], loop: true, volume: 1 },
+                { name: 'shootSound', src: ['/assets/sounds/short-laser-gun-shot.wav'] },
+                { name: 'enemyDeathSound', src: ['/assets/sounds/quick-knife-slice-cutting.wav'] },
+                { name: 'gotCollectibleSound', src: ['/assets/sounds/sparkle-hybrid-transition.wav'] },
+                { name: 'playerDeathSound', src: ['/assets/sounds/male-death-sound.wav'] },
+                { name: 'countdownSound', src: ['/assets/sounds/countdown-from-10.wav'] },
+                { name: 'winSound', src: ['/assets/sounds/winning-chimes.wav'] },
+                { name: 'loseSound', src: ['/assets/sounds/circus-lose.wav'] },
+                { name: 'congratulationsSound', src: ['/assets/sounds/congratulations.wav'] },
+                { name: 'missionFailedSound', src: ['/assets/sounds/mission-failed.wav'] },
+                { name: 'leaderboardApplauseSound', src: ['/assets/sounds/auditorium-moderate-applause-and-cheering.wav'] }
+            ];
+
+            const sounds = {};
+            let loadedCount = 0;
+            const totalSounds = soundConfigs.length;
+
+            soundConfigs.forEach(config => {
+                const sound = new Howl({
+                    src: config.src,
+                    loop: config.loop || false,
+                    volume: config.volume || 1,
+                    onload: () => {
+                        loadedCount++;
+                        if (loadedCount === totalSounds) {
+                            console.log("All sounds loaded");
+                            resolve(sounds);
+                        }
+                    },
+                    onloaderror: (id, error) => {
+                        console.warn(`Failed to load sound ${config.name}:`, error);
+                        loadedCount++;
+                        if (loadedCount === totalSounds) {
+                            resolve(sounds);
+                        }
+                    }
+                });
+                sounds[config.name] = sound;
+            });
+        });
+    }
+
+    // Declare sound variables in outer scope
+    let backgroundMusic, shootSound, enemyDeathSound, gotCollectibleSound, 
+        playerDeathSound, countdownSound, winSound, loseSound, 
+        congratulationsSound, missionFailedSound, leaderboardApplauseSound;
+
+    // Load everything before starting
+    try {
+        await loadAllAssets();
+        const sounds = await loadSounds();
+        
+        // Assign sounds to variables
+        backgroundMusic = sounds.backgroundMusic;
+        shootSound = sounds.shootSound;
+        enemyDeathSound = sounds.enemyDeathSound;
+        gotCollectibleSound = sounds.gotCollectibleSound;
+        playerDeathSound = sounds.playerDeathSound;
+        countdownSound = sounds.countdownSound;
+        winSound = sounds.winSound;
+        loseSound = sounds.loseSound;
+        congratulationsSound = sounds.congratulationsSound;
+        missionFailedSound = sounds.missionFailedSound;
+        leaderboardApplauseSound = sounds.leaderboardApplauseSound;
+
+        // Hide loading scene and initialize game
+        loadingScene.visible = false;
+        initializeGame();
+    } catch (error) {
+        console.error("Error loading assets:", error);
+        loadingText.text = "Loading failed. Please refresh.";
+        progressText.text = "";
+    }
+
+    // Placeholder leaderboard
+    let leaderboard = [
+        { name: "Alice", score: 43 },
+        { name: "Bob", score: 38 },
+        { name: "Charlie", score: 33 },
+        { name: "Dana", score: 28 },
+        { name: "Eli", score: 23 },
+    ];
+
+    function initializeGame() {
+    // Resize function
     function resize() {
         // Compute scale
         const scaleX = window.innerWidth / GAME_WIDTH;
@@ -143,8 +249,8 @@
     const collectibles = [];
     const enemyBullets = [];
 
-    // Background
-    const backgroundTexture = PIXI.Texture.from("assets/game-scene-bg.png");
+    // Background - use preloaded texture
+    const backgroundTexture = PIXI.Assets.get("assets/game-scene-bg.png");
     const backgroundSprite = new PIXI.Sprite(backgroundTexture);
 
     // Resize to fit game scene
@@ -167,19 +273,13 @@
     const gameOverScene = new PIXI.Container();
 
     app.stage.addChild(startScene, gameOverScene, gameScene);
-    startScene.visible = true;
+    startScene.visible = false; // Will be shown after loading
     gameScene.visible = false;
     gameOverScene.visible = false;
     disableOverlay();
-    backgroundMusic.play();
 
-    app.ticker.add(() => {
-        startBG.alpha = 0.95 + Math.sin(Date.now() / 600) * 0.5;
-    });
-
-    // Start Scene
-    // Background
-    const startBG = PIXI.Sprite.from('assets/hold-the-line-art.png');
+    // Start Scene - initialize now that assets are loaded
+    startBG = new PIXI.Sprite(PIXI.Assets.get('assets/hold-the-line-art.png'));
     startBG.width = GAME_WIDTH;
     startBG.height = GAME_HEIGHT;
     startScene.addChild(startBG);
@@ -352,8 +452,8 @@
     }
 
     // Game Scene
-    // Player sprite
-    const playerTexture = PIXI.Texture.from('assets/soldier-sprite-gamePlay.png');
+    // Player sprite - use preloaded texture
+    const playerTexture = PIXI.Assets.get('assets/soldier-sprite-gamePlay.png');
     const player = new PIXI.Sprite(playerTexture);
 
     // Set anchor to center bottom so movement feels natural
@@ -379,18 +479,18 @@
         const color = EMOTION_COLORS[emotion];
         enemyContainer.color = color;       // save color so bullets use same theme
 
-        // Enemy sprite
+        // Enemy sprite - use preloaded textures
         let enemyTexture;
         if (emotion == "Fear"){
-            enemyTexture = PIXI.Texture.from('assets/enemy-sprites/fear-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/fear-sprite.png');
         }else if (emotion == "Anxiety"){
-            enemyTexture = PIXI.Texture.from('assets/enemy-sprites/anxiety-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/anxiety-sprite.png');
         }else if (emotion == "Anger"){
-            enemyTexture = PIXI.Texture.from('assets/enemy-sprites/anger-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/anger-sprite.png');
         }else if (emotion == "Despair"){
-            enemyTexture = PIXI.Texture.from('assets/enemy-sprites/despair-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/despair-sprite.png');
         }else if (emotion == "Guilt"){
-            enemyTexture = PIXI.Texture.from('assets/enemy-sprites/guilt-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/guilt-sprite.png');
         }
         const enemySprite = new PIXI.Sprite(enemyTexture);
 
@@ -789,7 +889,7 @@
         lbTitle.y = 210;
         gameOverScene.addChild(lbTitle);
 
-        const endgameSpriteTexture = PIXI.Texture.from('assets/soldier-sprite-endgame.png');
+        const endgameSpriteTexture = PIXI.Assets.get('assets/soldier-sprite-endgame.png');
 
         const endgameSpriteLeft = new PIXI.Sprite(endgameSpriteTexture);
         endgameSpriteLeft.anchor.set(1,0.5);
@@ -1090,4 +1190,16 @@
             if (entry.pending) delete entry.pending;
         });
     }
+
+    // Start scene animation
+    app.ticker.add(() => {
+        if (startBG) {
+            startBG.alpha = 0.95 + Math.sin(Date.now() / 600) * 0.5;
+        }
+    });
+
+    // Show start scene and play background music
+    startScene.visible = true;
+    backgroundMusic.play();
+    } // End of initializeGame
 })();
