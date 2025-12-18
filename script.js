@@ -135,6 +135,7 @@
         const assetPaths = [
             'assets/game-scene-bg.png',
             'assets/hold-the-line-art.png',
+            'assets/soldier-album-art.png',
             'assets/soldier-sprite-gamePlay.png',
             'assets/soldier-sprite-endgame.png',
             'assets/enemy-sprites/fear-sprite.png',
@@ -320,48 +321,302 @@
     gameOverScene.visible = false;
     disableOverlay();
 
-    // Start Scene - initialize now that assets are loaded
-    startBG = new PIXI.Sprite(PIXI.Assets.get('assets/hold-the-line-art.png'));
-    startBG.width = GAME_WIDTH;
-    startBG.height = GAME_HEIGHT;
-    startScene.addChild(startBG);
+    // Start Scene - create dynamic background
+    // Dark gradient background
+    const bgGraphics = new PIXI.Graphics();
+    
+    // Create gradient effect using multiple rectangles
+    const gradientSteps = 20;
+    for (let i = 0; i < gradientSteps; i++) {
+        const alpha = 1 - (i / gradientSteps) * 0.3;
+        const y = (GAME_HEIGHT / gradientSteps) * i;
+        const color = i < gradientSteps / 2 
+            ? 0x0a0a0a  // Darker at top
+            : 0x1a1a1a; // Slightly lighter at bottom
+        bgGraphics.beginFill(color, alpha);
+        bgGraphics.drawRect(0, y, GAME_WIDTH, GAME_HEIGHT / gradientSteps + 1);
+        bgGraphics.endFill();
+    }
+    
+    // Add animated particles effect
+    const particleContainer = new PIXI.Container();
+    const particles = [];
+    for (let i = 0; i < 80; i++) {
+        const particle = new PIXI.Graphics();
+        const size = Math.random() * 3 + 1; // Larger particles (1-4px)
+        const alpha = Math.random() * 0.5 + 0.3; // More visible (0.3-0.8)
+        particle.beginFill(0x00ff66, alpha);
+        particle.drawCircle(0, 0, size);
+        particle.endFill();
+        
+        const particleData = {
+            sprite: particle,
+            x: Math.random() * GAME_WIDTH,
+            y: Math.random() * GAME_HEIGHT,
+            speed: Math.random() * 0.8 + 0.3, // Faster movement (0.3-1.1)
+            phase: Math.random() * Math.PI * 2, // Random phase for pulsing
+        };
+        
+        particle.x = particleData.x;
+        particle.y = particleData.y;
+        particles.push(particleData);
+        particleContainer.addChild(particle);
+    }
+    startScene.addChild(bgGraphics);
+    startScene.addChild(particleContainer);
+    
+    // Animate particles
+    app.ticker.add(() => {
+        if (particleContainer && startScene.visible && particles.length > 0) {
+            const time = Date.now() / 1000;
+            particles.forEach((p, i) => {
+                // Move particle down
+                p.y += p.speed;
+                
+                // Pulsing alpha effect
+                p.sprite.alpha = 0.3 + Math.sin(time * 2 + p.phase) * 0.4;
+                
+                // Reset position when off screen
+                if (p.y > GAME_HEIGHT + 10) {
+                    p.y = -10;
+                    p.x = Math.random() * GAME_WIDTH;
+                }
+                
+                // Update sprite position
+                p.sprite.x = p.x;
+                p.sprite.y = p.y;
+            });
+        }
+    });
+    
+    // Store reference for background (used in animation)
+    startBG = bgGraphics;
+
+    // Main container for start screen content
+    const startContentContainer = new PIXI.Container();
+    startScene.addChild(startContentContainer);
+
+    // Left side: Album artwork area
+    const albumArtContainer = new PIXI.Container();
+    // Position to ensure full visibility (album art extends 140px left from center)
+    albumArtContainer.x = 150;
+    albumArtContainer.y = GAME_HEIGHT / 2;
+    startContentContainer.addChild(albumArtContainer);
+
+    // Album artwork (load from assets)
+    const albumArtSize = 280;
+    const albumArtSprite = new PIXI.Sprite(PIXI.Assets.get('assets/soldier-album-art.png'));
+    albumArtSprite.anchor.set(0.5);
+    albumArtSprite.width = albumArtSize;
+    albumArtSprite.height = albumArtSize;
+    
+    // Add rounded corners mask for album art
+    const albumArtMask = new PIXI.Graphics();
+    albumArtMask.beginFill(0xffffff);
+    albumArtMask.drawRoundedRect(-albumArtSize/2, -albumArtSize/2, albumArtSize, albumArtSize, 15);
+    albumArtMask.endFill();
+    albumArtSprite.mask = albumArtMask;
+    albumArtContainer.addChild(albumArtMask);
+    albumArtContainer.addChild(albumArtSprite);
+    
+    // Yellow border around album art
+    const albumArtBorder = new PIXI.Graphics();
+    albumArtBorder.lineStyle(3, 0xffff00, 0.9);
+    albumArtBorder.drawRoundedRect(-albumArtSize/2, -albumArtSize/2, albumArtSize, albumArtSize, 15);
+    albumArtContainer.addChild(albumArtBorder);
+
+    // Album title below artwork
+    const albumTitle = new PIXI.Text("SOLDIER", {
+        fill: "#ffff00",
+        fontSize: 32,
+        fontWeight: "900",
+        fontFamily: "Orbitron",
+        letterSpacing: 4
+    });
+    albumTitle.anchor.set(0.5);
+    albumTitle.y = albumArtSize / 2 + 40;
+    albumArtContainer.addChild(albumTitle);
+
+    // Right side: Game content (positioned to avoid overlap with album art)
+    const gameContentContainer = new PIXI.Container();
+    gameContentContainer.x = 620; // Moved right to clear album art (which ends around 290px)
+    gameContentContainer.y = GAME_HEIGHT / 2;
+    startContentContainer.addChild(gameContentContainer);
+
+    // Background panel for game content
+    const contentPanel = new PIXI.Graphics();
+    contentPanel.beginFill(0x000000, 0.75);
+    contentPanel.drawRoundedRect(-320, -220, 640, 440, 20);
+    contentPanel.endFill();
+    contentPanel.lineStyle(3, 0x00ff66, 1);
+    contentPanel.drawRoundedRect(-320, -220, 640, 440, 20);
+    gameContentContainer.addChild(contentPanel);
+
+    // Title
+    const titleText = new PIXI.Text("HOLD THE LINE", {
+        fill: "#ffff00", // Yellow to match album art
+        fontSize: 44,
+        fontWeight: "900",
+        fontFamily: "Orbitron",
+        stroke: "#000000",
+        strokeThickness: 4,
+        letterSpacing: 6
+    });
+    titleText.anchor.set(0.5);
+    titleText.y = -160;
+    gameContentContainer.addChild(titleText);
+
+    // Subtitle
+    const subtitleText = new PIXI.Text("Official Game", {
+        fill: "#00ff66",
+        fontSize: 16,
+        fontFamily: "Orbitron",
+        letterSpacing: 3
+    });
+    subtitleText.anchor.set(0.5);
+    subtitleText.y = -115;
+    gameContentContainer.addChild(subtitleText);
 
     // Mission Instructions
     const missionText = new PIXI.Text(
         'Mission: Hold the line against the enemies\nand collect all the letters of "SOLDIER" under 60 seconds.',
         {
-            fill: '#dddddd',
-            fontSize: 25,
+            fill: '#ffffff',
+            fontSize: 20,
             fontFamily: 'Orbitron',
             align: 'center',
             wordWrap: true,
-            wordWrapWidth: 800,
+            wordWrapWidth: 580,
+            lineHeight: 28,
         }
     );
     missionText.anchor.set(0.5);
-    missionText.x = GAME_WIDTH / 2;
-    missionText.y = 430; // slightly above the Play button
-    startScene.addChild(missionText);
+    missionText.y = -30;
+    gameContentContainer.addChild(missionText);
 
+    // Play Button Container
+    const playButtonContainer = new PIXI.Container();
+    playButtonContainer.y = 80;
+    gameContentContainer.addChild(playButtonContainer);
 
-    // Play Button
-    const playBtn = new PIXI.Text("▶ Play", {
-        fill: "#ffffff",
-        fontSize: 36,
-        fontWeight: "bold",
-        fontFamily: "Orbitron"
+    // Play Button Background
+    const playBtnBg = new PIXI.Graphics();
+    playBtnBg.beginFill(0x00ff66, 0.2);
+    playBtnBg.drawRoundedRect(-100, -25, 200, 50, 12);
+    playBtnBg.endFill();
+    playBtnBg.lineStyle(2, 0x00ff66, 1);
+    playBtnBg.drawRoundedRect(-100, -25, 200, 50, 12);
+    playButtonContainer.addChild(playBtnBg);
+
+    // Play Button Text
+    const playBtn = new PIXI.Text("▶ PLAY", {
+        fill: "#00ff66",
+        fontSize: 32,
+        fontWeight: "700",
+        fontFamily: "Orbitron",
+        letterSpacing: 3
     });
     playBtn.anchor.set(0.5);
-    playBtn.x = GAME_WIDTH / 2;
-    playBtn.y = 500;
-    playBtn.interactive = true;
-    playBtn.cursor = "pointer";
-    playBtn.on("pointerover", () => playBtn.style.fill = "#ffff66");
-    playBtn.on("pointerout", () => playBtn.style.fill = "#ffffff");
-    playBtn.on("pointerdown", () => {
+    playButtonContainer.addChild(playBtn);
+
+    // Make entire button container interactive
+    playButtonContainer.interactive = true;
+    playButtonContainer.buttonMode = true;
+    playButtonContainer.cursor = "pointer";
+    
+    // Hover effects
+    playButtonContainer.on("pointerover", () => {
+        playBtnBg.clear();
+        playBtnBg.beginFill(0x00ff66, 0.3);
+        playBtnBg.drawRoundedRect(-100, -25, 200, 50, 12);
+        playBtnBg.endFill();
+        playBtnBg.lineStyle(3, 0x00ff66, 1);
+        playBtnBg.drawRoundedRect(-100, -25, 200, 50, 12);
+        playBtn.style.fill = "#ffff66";
+        playBtn.style.fontSize = 34;
+    });
+    
+    playButtonContainer.on("pointerout", () => {
+        playBtnBg.clear();
+        playBtnBg.beginFill(0x00ff66, 0.2);
+        playBtnBg.drawRoundedRect(-100, -25, 200, 50, 12);
+        playBtnBg.endFill();
+        playBtnBg.lineStyle(2, 0x00ff66, 1);
+        playBtnBg.drawRoundedRect(-100, -25, 200, 50, 12);
+        playBtn.style.fill = "#00ff66";
+        playBtn.style.fontSize = 32;
+    });
+    
+    playButtonContainer.on("pointerdown", () => {
         resetGame();
     });
-    startScene.addChild(playBtn);
+
+    // Album link/promotion on start screen (centered relative to game content container)
+    const albumLinkContainer = new PIXI.Container();
+    albumLinkContainer.x = gameContentContainer.x; // Center relative to game content container
+    albumLinkContainer.y = GAME_HEIGHT - 80;
+    startContentContainer.addChild(albumLinkContainer);
+
+    // Album link background (wider to fit text)
+    const albumLinkBg = new PIXI.Graphics();
+    const buttonWidth = 420;
+    const buttonHeight = 40;
+    const buttonRadius = 10;
+    albumLinkBg.beginFill(0x000000, 0.7);
+    albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
+    albumLinkBg.endFill();
+    albumLinkBg.lineStyle(2, 0xffff00, 0.9);
+    albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
+    albumLinkContainer.addChild(albumLinkBg);
+
+    const albumLinkText = new PIXI.Text("🎵 Listen to SOLDIER Album", {
+        fill: "#ffff00",
+        fontSize: 22,
+        fontWeight: "700",
+        fontFamily: "Orbitron",
+        letterSpacing: 2
+    });
+    albumLinkText.anchor.set(0.5);
+    albumLinkContainer.addChild(albumLinkText);
+
+    albumLinkContainer.interactive = true;
+    albumLinkContainer.buttonMode = true;
+    albumLinkContainer.cursor = "pointer";
+    albumLinkContainer.on("pointerover", () => {
+        albumLinkBg.clear();
+        albumLinkBg.beginFill(0x1a1a1a, 0.8);
+        albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
+        albumLinkBg.endFill();
+        albumLinkBg.lineStyle(3, 0xffff00, 1);
+        albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
+        albumLinkText.style.fill = "#ffff99";
+    });
+    albumLinkContainer.on("pointerout", () => {
+        albumLinkBg.clear();
+        albumLinkBg.beginFill(0x000000, 0.7);
+        albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
+        albumLinkBg.endFill();
+        albumLinkBg.lineStyle(2, 0xffff00, 0.9);
+        albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
+        albumLinkText.style.fill = "#ffff00";
+    });
+    albumLinkContainer.on("pointerdown", () => {
+        window.open("https://github.com/ArinzeGit", "_blank");
+    });
+
+    // Add subtle glow animation to title (yellow theme to match album)
+    app.ticker.add(() => {
+        if (titleText && startScene.visible) {
+            const glowPhase = Date.now() / 1000;
+            const glowIntensity = 0.5 + Math.sin(glowPhase) * 0.5;
+            // Alternate between darker and brighter yellow
+            if (glowIntensity > 0.5) {
+                titleText.style.fill = "#ffff00";
+            } else {
+                titleText.style.fill = "#cccc00";
+            }
+        }
+    });
 
     // UI Container
     // Letter display container
@@ -1244,12 +1499,7 @@
         });
     }
 
-    // Start scene animation
-    app.ticker.add(() => {
-        if (startBG) {
-            startBG.alpha = 0.95 + Math.sin(Date.now() / 600) * 0.5;
-        }
-    });
+    // Start scene animation handled above (particles and title glow)
 
     // Show start scene and play background music
     startScene.visible = true;
