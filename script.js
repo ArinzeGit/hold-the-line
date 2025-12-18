@@ -285,6 +285,8 @@
     let elapsedTime = 0; // in seconds
     let isCountdownPlaying = false;
     let backgroundMusicTimeout = null; // Track delayed background music timeout
+    let musicEnabled = false; // Track if user has enabled music
+    let musicButtonContainer = null; // Music enable button container
 
      // Arrays
     const projectiles = [];
@@ -551,6 +553,93 @@
         resetGame();
     });
 
+    // Music enable button (show if music not enabled) - positioned above album art
+    function createMusicButton() {
+        if (musicButtonContainer) return; // Already created
+        
+        musicButtonContainer = new PIXI.Container();
+        // Position above album art (which is centered at x=150, y=GAME_HEIGHT/2, size 280)
+        const artSize = 280; // Album art size
+        musicButtonContainer.x = albumArtContainer.x; // Align with album art
+        musicButtonContainer.y = albumArtContainer.y - artSize / 2 - 60; // Above album art
+        startContentContainer.addChild(musicButtonContainer);
+        
+        // Animated pointing finger (medium skin tone)
+        const pointingFinger = new PIXI.Text("👇🏽", {
+            fontSize: 32,
+        });
+        pointingFinger.anchor.set(0.5);
+        pointingFinger.y = -35;
+        musicButtonContainer.addChild(pointingFinger);
+        
+        // Animate the pointing finger (bounce/pulse effect)
+        let fingerOffset = 0;
+        app.ticker.add(() => {
+            if (pointingFinger && musicButtonContainer && musicButtonContainer.visible) {
+                fingerOffset += 0.1;
+                pointingFinger.y = -35 + Math.sin(fingerOffset) * 5; // Bounce animation
+            }
+        });
+
+        const musicBtnBg = new PIXI.Graphics();
+        musicBtnBg.beginFill(0x000000, 0.6);
+        musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+        musicBtnBg.endFill();
+        musicBtnBg.lineStyle(2, 0xffff00, 0.8);
+        musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+        musicButtonContainer.addChild(musicBtnBg);
+
+        const musicButtonText = new PIXI.Text("🔊 Enable Music", {
+            fill: "#ffff00",
+            fontSize: 18,
+            fontWeight: "600",
+            fontFamily: "Orbitron",
+            letterSpacing: 1
+        });
+        musicButtonText.anchor.set(0.5);
+        musicButtonContainer.addChild(musicButtonText);
+
+        musicButtonContainer.interactive = true;
+        musicButtonContainer.buttonMode = true;
+        musicButtonContainer.cursor = "pointer";
+        
+        musicButtonContainer.on("pointerover", () => {
+            musicBtnBg.clear();
+            musicBtnBg.beginFill(0x1a1a1a, 0.7);
+            musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+            musicBtnBg.endFill();
+            musicBtnBg.lineStyle(3, 0xffff00, 1);
+            musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+            musicButtonText.style.fill = "#ffff99";
+        });
+        
+        musicButtonContainer.on("pointerout", () => {
+            musicBtnBg.clear();
+            musicBtnBg.beginFill(0x000000, 0.6);
+            musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+            musicBtnBg.endFill();
+            musicBtnBg.lineStyle(2, 0xffff00, 0.8);
+            musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+            musicButtonText.style.fill = "#ffff00";
+        });
+        
+        musicButtonContainer.on("pointerdown", () => {
+            if (!musicEnabled) {
+                backgroundMusic.play();
+                musicEnabled = true;
+                musicButtonText.text = "🔊 Music Enabled";
+                setTimeout(() => {
+                    if (musicButtonContainer && musicButtonContainer.parent) {
+                        musicButtonContainer.visible = false;
+                    }
+                }, 1500);
+            }
+        });
+    }
+    
+    // Create music button after albumArtContainer is defined
+    createMusicButton();
+
     // Album link/promotion on start screen (centered relative to game content container)
     const albumLinkContainer = new PIXI.Container();
     albumLinkContainer.x = gameContentContainer.x; // Center relative to game content container
@@ -569,7 +658,7 @@
     albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
     albumLinkContainer.addChild(albumLinkBg);
 
-    const albumLinkText = new PIXI.Text("🎵 Listen to SOLDIER Album", {
+    const albumLinkText = new PIXI.Text("🎵 Get the SOLDIER Album", {
         fill: "#ffff00",
         fontSize: 22,
         fontWeight: "700",
@@ -1404,6 +1493,8 @@
             gameOverScene.visible = false;
             gameScene.visible = false;
             startScene.visible = true;
+            // Music button won't reappear once dismissed - music continues from endgame
+            fixViewport();
         });
 
         // Play Again button
@@ -1439,6 +1530,12 @@
 
     // Reset game state
     function resetGame() {
+        // Hide music button and enable music when user clicks Play
+        if (musicButtonContainer) {
+            musicButtonContainer.visible = false;
+            musicEnabled = true;
+        }
+        
         // Reset controls in case endgame destroyed buttons abruptly on mobile
         keys["ArrowLeft"] = false;
         keys["ArrowRight"] = false;
@@ -1501,8 +1598,12 @@
 
     // Start scene animation handled above (particles and title glow)
 
-    // Show start scene and play background music
+    // Show start scene (music will play when user enables it)
     startScene.visible = true;
-    backgroundMusic.play();
+    
+    // Show music button only if it hasn't been dismissed yet
+    if (musicButtonContainer && musicButtonContainer.parent) {
+        musicButtonContainer.visible = !musicEnabled;
+    }
     } // End of initializeGame
 })();
