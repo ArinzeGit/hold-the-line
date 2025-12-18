@@ -582,11 +582,13 @@
         });
 
         const musicBtnBg = new PIXI.Graphics();
+        const musicBtnWidth = 200; // Wider to accommodate "Music Enabled" text
+        const musicBtnHeight = 40;
         musicBtnBg.beginFill(0x000000, 0.6);
-        musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+        musicBtnBg.drawRoundedRect(-musicBtnWidth/2, -musicBtnHeight/2, musicBtnWidth, musicBtnHeight, 10);
         musicBtnBg.endFill();
         musicBtnBg.lineStyle(2, 0xffff00, 0.8);
-        musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+        musicBtnBg.drawRoundedRect(-musicBtnWidth/2, -musicBtnHeight/2, musicBtnWidth, musicBtnHeight, 10);
         musicButtonContainer.addChild(musicBtnBg);
 
         const musicButtonText = new PIXI.Text("🔊 Enable Music", {
@@ -606,20 +608,20 @@
         musicButtonContainer.on("pointerover", () => {
             musicBtnBg.clear();
             musicBtnBg.beginFill(0x1a1a1a, 0.7);
-            musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+            musicBtnBg.drawRoundedRect(-musicBtnWidth/2, -musicBtnHeight/2, musicBtnWidth, musicBtnHeight, 10);
             musicBtnBg.endFill();
             musicBtnBg.lineStyle(3, 0xffff00, 1);
-            musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+            musicBtnBg.drawRoundedRect(-musicBtnWidth/2, -musicBtnHeight/2, musicBtnWidth, musicBtnHeight, 10);
             musicButtonText.style.fill = "#ffff99";
         });
         
         musicButtonContainer.on("pointerout", () => {
             musicBtnBg.clear();
             musicBtnBg.beginFill(0x000000, 0.6);
-            musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+            musicBtnBg.drawRoundedRect(-musicBtnWidth/2, -musicBtnHeight/2, musicBtnWidth, musicBtnHeight, 10);
             musicBtnBg.endFill();
             musicBtnBg.lineStyle(2, 0xffff00, 0.8);
-            musicBtnBg.drawRoundedRect(-90, -20, 180, 40, 10);
+            musicBtnBg.drawRoundedRect(-musicBtnWidth/2, -musicBtnHeight/2, musicBtnWidth, musicBtnHeight, 10);
             musicButtonText.style.fill = "#ffff00";
         });
         
