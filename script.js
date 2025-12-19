@@ -1067,6 +1067,81 @@
         app.ticker.add(animateExplosion);
     }
 
+    // Create collection effect when player collects a collectible
+    // Uses radiating circles for a smooth, elegant effect
+    function createCollectionEffect(x, y) {
+        const collectionContainer = new PIXI.Container();
+        collectionContainer.x = x;
+        collectionContainer.y = y;
+        bulletCollectibleContainer.addChild(collectionContainer);
+
+        const circleCount = 3;
+        const circles = [];
+
+        // Create multiple expanding circles
+        for (let i = 0; i < circleCount; i++) {
+            const circle = new PIXI.Graphics();
+            const initialRadius = 5 + i * 3;
+            const maxRadius = 30 + i * 10;
+            const speed = 2 + i * 0.5;
+            const delay = i * 0.1; // Stagger the circles slightly
+            
+            circle.lineStyle(3, 0xffff00, 1); // Yellow border
+            circle.drawCircle(0, 0, initialRadius);
+            
+            collectionContainer.addChild(circle);
+
+            circles.push({
+                graphics: circle,
+                radius: initialRadius,
+                maxRadius: maxRadius,
+                speed: speed,
+                delay: delay,
+                life: 1.0,
+                elapsed: 0
+            });
+        }
+
+        // Animate circles
+        const animateCollection = () => {
+            let allDead = true;
+            
+            circles.forEach(c => {
+                c.elapsed += 0.016; // ~60fps timing
+                
+                if (c.elapsed > c.delay && c.life > 0) {
+                    allDead = false;
+                    
+                    // Expand the circle
+                    c.radius += c.speed;
+                    
+                    // Calculate alpha based on how far it's expanded
+                    const progress = (c.radius - 5) / (c.maxRadius - 5);
+                    c.life = Math.max(0, 1 - progress);
+                    
+                    // Clear and redraw circle at new size
+                    c.graphics.clear();
+                    c.graphics.lineStyle(3, 0xffff00, c.life);
+                    c.graphics.drawCircle(0, 0, c.radius);
+                    
+                    // Remove when fully expanded
+                    if (c.radius >= c.maxRadius) {
+                        c.life = 0;
+                    }
+                }
+            });
+
+            if (allDead) {
+                collectionContainer.removeChildren().forEach(c => c.destroy());
+                bulletCollectibleContainer.removeChild(collectionContainer);
+                collectionContainer.destroy();
+                app.ticker.remove(animateCollection);
+            }
+        };
+
+        app.ticker.add(animateCollection);
+    }
+
     // Game loop
     app.ticker.add(() => {
         if (gameOver) return;
@@ -1183,10 +1258,17 @@
             // Collect
             if (hitTest(player, c)) {
                 if (!collectedLetters.has(c.letter)) {
+                    // Get collectible position for visual effect
+                    const collectibleX = c.x;
+                    const collectibleY = c.y;
+                    
+                    // Create collection effect
+                    createCollectionEffect(collectibleX, collectibleY);
+                    
                     collectedLetters.add(c.letter);
                     gotCollectibleSound.play();
 
-                    // Update that letter’s color
+                    // Update that letter's color
                     for (let i = 0; i < TARGET_WORD.length; i++) {
                         if (TARGET_WORD[i] === c.letter) {
                             letterTexts[i].style.fill = "#ffff00"; // bright yellow when collected
