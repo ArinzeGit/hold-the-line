@@ -706,41 +706,82 @@
     gameSceneBg.width = GAME_WIDTH;
     gameSceneBg.height = GAME_HEIGHT;
     gameSceneBgContainer.addChild(gameSceneBg);
-    // UI Container
-    // Letter display container
+    // UI Container - Card-based design
+    // Letter display card (top left)
+    const letterCard = new PIXI.Container();
+    letterCard.x = 20;
+    letterCard.y = 20;
+    
+    const letterCardBg = new PIXI.Graphics();
+    const letterCardWidth = 240;
+    const letterCardHeight = 50;
+    letterCardBg.beginFill(0x000000, 0.75);
+    letterCardBg.drawRoundedRect(0, 0, letterCardWidth, letterCardHeight, 10);
+    letterCardBg.endFill();
+    letterCardBg.lineStyle(2, 0xffff00, 1); // Yellow border to match theme
+    letterCardBg.drawRoundedRect(0, 0, letterCardWidth, letterCardHeight, 10);
+    letterCard.addChild(letterCardBg);
+    
+    // Letter display container (inside card)
     const wordDisplay = new PIXI.Container();
-    wordDisplay.x = 10;
-    wordDisplay.y = 10;
-    uiContainer.addChild(wordDisplay);
+    wordDisplay.x = 15; // Padding from card edge
+    wordDisplay.y = letterCardHeight / 2; // Center vertically
+    letterCard.addChild(wordDisplay);
 
     const letterTexts = [];
+    const letterSpacing = 28;
+    const totalWordWidth = (TARGET_WORD.length - 1) * letterSpacing + 25; // Approximate width
+    const startX = (letterCardWidth - totalWordWidth) / 2; // Center letters in card
 
     for (let i = 0; i < TARGET_WORD.length; i++) {
         const char = TARGET_WORD[i];
         const letterText = new PIXI.Text(char, {
             fill: "#555", // gray initially
-            fontSize: 32,
+            fontSize: 28,
             fontWeight: "bold",
-            fontFamily: "Verdana",
+            fontFamily: "Orbitron", // Match game font
             stroke: "#000000",
-            strokeThickness: 4
+            strokeThickness: 3
         });
-        letterText.x = i * 30; // spacing between letters
+        letterText.anchor.set(0.5, 0.5); // Center anchor for better alignment
+        letterText.x = startX + i * letterSpacing;
+        letterText.y = 0;
         wordDisplay.addChild(letterText);
         letterTexts.push(letterText);
     }
+    
+    uiContainer.addChild(letterCard);
 
-    // Timer display
+    // Timer display card (top right)
+    const timerCard = new PIXI.Container();
+    timerCard.x = GAME_WIDTH - 220; // Position from right
+    timerCard.y = 20;
+    
+    const timerCardBg = new PIXI.Graphics();
+    const timerCardWidth = 200;
+    const timerCardHeight = 50;
+    timerCardBg.beginFill(0x000000, 0.75);
+    timerCardBg.drawRoundedRect(0, 0, timerCardWidth, timerCardHeight, 10);
+    timerCardBg.endFill();
+    timerCardBg.lineStyle(2, 0x00ff66, 1); // Green border for timer
+    timerCardBg.drawRoundedRect(0, 0, timerCardWidth, timerCardHeight, 10);
+    timerCard.addChild(timerCardBg);
+    
+    // Timer text (inside card)
     const timerText = new PIXI.Text(`Time left: 60s`, {
-        fill: "#fff",
-        fontSize: 24,
+        fill: "#00ff66", // Green to match border
+        fontSize: 22,
         fontFamily: "Orbitron",
+        fontWeight: "bold",
         stroke: "#000000",
-        strokeThickness: 4
+        strokeThickness: 3
     });
-    timerText.x = GAME_WIDTH - 200;
-    timerText.y = 10;
-    uiContainer.addChild(timerText);
+    timerText.anchor.set(0.5, 0.5);
+    timerText.x = timerCardWidth / 2;
+    timerText.y = timerCardHeight / 2;
+    timerCard.addChild(timerText);
+    
+    uiContainer.addChild(timerCard);
 
     // Controls
     const keys = {};
