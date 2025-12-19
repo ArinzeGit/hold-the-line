@@ -294,27 +294,15 @@
     const collectibles = [];
     const enemyBullets = [];
 
-    // Background - use preloaded texture
-    const backgroundTexture = PIXI.Assets.get("assets/game-scene-bg.png");
-    const backgroundSprite = new PIXI.Sprite(backgroundTexture);
-
-    // Resize to fit game scene
-    backgroundSprite.width = GAME_WIDTH;
-    backgroundSprite.height = GAME_HEIGHT;
-
-    // Add to stage (at the very back)
-    app.stage.addChildAt(backgroundSprite, 0);
-
-    // Game Scenes
+    // Scenes
     const startScene = new PIXI.Container();
-
     const gameScene = new PIXI.Container();
     // containers for layering
+    const gameSceneBgContainer = new PIXI.Container();
     const bulletCollectibleContainer = new PIXI.Container();
     const playerEnemyContainer = new PIXI.Container();
     const uiContainer = new PIXI.Container();
-    gameScene.addChild(bulletCollectibleContainer, playerEnemyContainer, uiContainer);
-
+    gameScene.addChild(gameSceneBgContainer, bulletCollectibleContainer, playerEnemyContainer, uiContainer);
     const gameOverScene = new PIXI.Container();
 
     app.stage.addChild(startScene, gameOverScene, gameScene);
@@ -324,20 +312,23 @@
     disableOverlay();
 
     // Start Scene - create dynamic background
-    // Dark gradient background
+    // Dark background with subtle grid pattern (military tech look)
     const bgGraphics = new PIXI.Graphics();
     
-    // Create gradient effect using multiple rectangles
-    const gradientSteps = 20;
-    for (let i = 0; i < gradientSteps; i++) {
-        const alpha = 1 - (i / gradientSteps) * 0.3;
-        const y = (GAME_HEIGHT / gradientSteps) * i;
-        const color = i < gradientSteps / 2 
-            ? 0x0a0a0a  // Darker at top
-            : 0x1a1a1a; // Slightly lighter at bottom
-        bgGraphics.beginFill(color, alpha);
-        bgGraphics.drawRect(0, y, GAME_WIDTH, GAME_HEIGHT / gradientSteps + 1);
-        bgGraphics.endFill();
+    // Dark base background
+    bgGraphics.beginFill(0x050505);
+    bgGraphics.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    bgGraphics.endFill();
+    
+    // Subtle grid lines (military tech aesthetic)
+    bgGraphics.lineStyle(1, 0x00ff66, 0.15); // Subtle green grid
+    for (let x = 0; x < GAME_WIDTH; x += 50) {
+        bgGraphics.moveTo(x, 0);
+        bgGraphics.lineTo(x, GAME_HEIGHT);
+    }
+    for (let y = 0; y < GAME_HEIGHT; y += 50) {
+        bgGraphics.moveTo(0, y);
+        bgGraphics.lineTo(GAME_WIDTH, y);
     }
     
     // Add animated particles effect
@@ -570,7 +561,6 @@
         });
         pointingFinger.anchor.set(0.5);
         pointingFinger.y = -35;
-        musicButtonContainer.addChild(pointingFinger);
         
         // Animate the pointing finger (bounce/pulse effect)
         let fingerOffset = 0;
@@ -600,6 +590,7 @@
         });
         musicButtonText.anchor.set(0.5);
         musicButtonContainer.addChild(musicButtonText);
+        musicButtonContainer.addChild(pointingFinger);
 
         musicButtonContainer.interactive = true;
         musicButtonContainer.buttonMode = true;
@@ -653,7 +644,7 @@
     const buttonWidth = 420;
     const buttonHeight = 40;
     const buttonRadius = 10;
-    albumLinkBg.beginFill(0x000000, 0.7);
+    albumLinkBg.beginFill(0x000000, 1);
     albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
     albumLinkBg.endFill();
     albumLinkBg.lineStyle(2, 0xffff00, 0.9);
@@ -675,21 +666,21 @@
     albumLinkContainer.cursor = "pointer";
     albumLinkContainer.on("pointerover", () => {
         albumLinkBg.clear();
-        albumLinkBg.beginFill(0x1a1a1a, 0.8);
+        albumLinkBg.beginFill(0x1a1a1a, 1); // Lighter background, but still opaque
         albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
         albumLinkBg.endFill();
-        albumLinkBg.lineStyle(3, 0xffff00, 1);
+        albumLinkBg.lineStyle(3, 0xffff00, 1); // Thicker border on hover
         albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
-        albumLinkText.style.fill = "#ffff99";
+        albumLinkText.style.fill = "#ffff99"; // Brighter text
     });
     albumLinkContainer.on("pointerout", () => {
         albumLinkBg.clear();
-        albumLinkBg.beginFill(0x000000, 0.7);
+        albumLinkBg.beginFill(0x000000, 1); // Back to opaque black
         albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
         albumLinkBg.endFill();
-        albumLinkBg.lineStyle(2, 0xffff00, 0.9);
+        albumLinkBg.lineStyle(2, 0xffff00, 0.9); // Normal border
         albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
-        albumLinkText.style.fill = "#ffff00";
+        albumLinkText.style.fill = "#ffff00"; // Normal text color
     });
     albumLinkContainer.on("pointerdown", () => {
         window.open("https://github.com/ArinzeGit", "_blank");
@@ -709,6 +700,12 @@
         }
     });
 
+    // Game Scene Background
+    const backgroundTexture = PIXI.Assets.get("assets/game-scene-bg.png");
+    const gameSceneBg = new PIXI.Sprite(backgroundTexture);
+    gameSceneBg.width = GAME_WIDTH;
+    gameSceneBg.height = GAME_HEIGHT;
+    gameSceneBgContainer.addChild(gameSceneBg);
     // UI Container
     // Letter display container
     const wordDisplay = new PIXI.Container();
@@ -839,7 +836,6 @@
         }
     }
 
-    // Game Scene
     // Player sprite - use preloaded texture
     const playerTexture = PIXI.Assets.get('assets/soldier-sprite-gamePlay.png');
     const player = new PIXI.Sprite(playerTexture);
@@ -1136,49 +1132,190 @@
     // Initial spawn
     startSpawning();
 
-    // Leaderboard input handling
-    let activeInput = null;
-    let saveButton = null;
-    let inputRowX = 0, inputRowY = 0, inputRowWidth = 0;
-    let inputLeaderboardContainer = null;
-    // Function to position input and save button over the correct leaderboard row
-    function positionLeaderboardInputAndSaveBtn() {
-        if (!activeInput) return;
+    // High score input modal (cleaner approach)
+    let inputModalContainer = null;
+    let inputModalInput = null;
+    let inputModalButton = null;
+    let pendingLeaderboardIndex = null;
 
-        const canvasRect = app.view.getBoundingClientRect();
-
-        // Convert local coords to global
-        const globalInputPosition = inputLeaderboardContainer.toGlobal(new PIXI.Point(inputRowX, inputRowY));
-        const globalInputEndPosition = inputLeaderboardContainer.toGlobal(new PIXI.Point(inputRowX + inputRowWidth, inputRowY));
-
-        // Screen width for this row
-        const screenWidth = globalInputEndPosition.x - globalInputPosition.x;
-
-        // Stage scale
-        const scale = app.stage.scale.x;
-
-        // Apply positioning + scaling
-        activeInput.style.left = canvasRect.left + globalInputPosition.x * 1.07 + "px"; // *1.07 offset to align with text
-        activeInput.style.top = canvasRect.top + globalInputPosition.y + "px";
-        activeInput.style.transform = "translateY(-50%)"; // vertical centering
-        activeInput.style.width = (screenWidth * 0.73) + "px"; // *0.73 to leave room for score
-        activeInput.style.fontSize = `${22 * scale}px`;
-        activeInput.style.padding = "0 5px";
-        saveButton.style.left = canvasRect.left + globalInputEndPosition.x * 1.02 + "px";
-        saveButton.style.top = canvasRect.top + globalInputPosition.y + "px";
-        saveButton.style.transform = "translateY(-50%)"; // vertical centering
-        saveButton.style.fontSize = `${16 * scale}px`;
+    // Modular leaderboard renderer
+    function renderLeaderboard(container, leaderboardData, startY, rowWidth) {
+        container.removeChildren().forEach(c => c.destroy());
+        
+        leaderboardData.forEach((entry, i) => {
+            const yPos = startY + i * 32; // Slightly more spacing
+            
+            const row = new PIXI.Container();
+            row.y = yPos;
+            
+            // Rank + name (white, left aligned)
+            const nameText = new PIXI.Text(
+                `${i + 1}. ${entry.name || " ???"}`,
+                { fill: entry.pending ? "#ffff00" : "#ffffff", fontSize: 22, fontFamily: "Orbitron" }
+            );
+            nameText.anchor.set(0, 0.5);
+            nameText.x = 0;
+            
+            // Score (green, right aligned)
+            const scoreText = new PIXI.Text(
+                `${entry.score}`,
+                { fill: "#00ff66", fontSize: 22, fontFamily: "Orbitron" }
+            );
+            scoreText.anchor.set(1, 0.5);
+            scoreText.x = rowWidth;
+            
+            row.addChild(nameText, scoreText);
+            row.x = -rowWidth / 2; // Center within the card container
+            
+            container.addChild(row);
+        });
     }
 
-    // Keep input and button synced after resize/orientation
-    window.addEventListener("resize", () => {
-        resize();
-        positionLeaderboardInputAndSaveBtn();
-    });
-    window.addEventListener("orientationchange", () => {
-        resize();
-        positionLeaderboardInputAndSaveBtn();
-    });
+    // Create/show input modal for high score entry
+    function showHighScoreInputModal(leaderboardIndex, callback) {
+        // Remove any existing modal
+        if (inputModalContainer) {
+            gameOverScene.removeChild(inputModalContainer);
+            if (inputModalInput && inputModalInput.parentNode) {
+                document.body.removeChild(inputModalInput);
+            }
+            if (inputModalButton && inputModalButton.parentNode) {
+                document.body.removeChild(inputModalButton);
+            }
+        }
+
+        // Create modal container
+        inputModalContainer = new PIXI.Container();
+        inputModalContainer.x = GAME_WIDTH / 2;
+        inputModalContainer.y = GAME_HEIGHT / 2;
+        gameOverScene.addChild(inputModalContainer);
+
+        // Modal background (dark card with border)
+        const modalBg = new PIXI.Graphics();
+        modalBg.beginFill(0x000000, 0.9);
+        modalBg.drawRoundedRect(-200, -100, 400, 200, 15);
+        modalBg.endFill();
+        modalBg.lineStyle(3, 0xffff00, 1);
+        modalBg.drawRoundedRect(-200, -100, 400, 200, 15);
+        inputModalContainer.addChild(modalBg);
+
+        // Title
+        const title = new PIXI.Text("🎉 New High Score!", {
+            fill: "#ffff00",
+            fontSize: 28,
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
+        });
+        title.anchor.set(0.5);
+        title.y = -60;
+        inputModalContainer.addChild(title);
+
+        // Prompt text
+        const prompt = new PIXI.Text("Enter your name:", {
+            fill: "#ffffff",
+            fontSize: 20,
+            fontFamily: "Orbitron"
+        });
+        prompt.anchor.set(0.5);
+        prompt.y = -20;
+        inputModalContainer.addChild(prompt);
+
+        // HTML input (positioned absolutely over canvas)
+        inputModalInput = document.createElement("input");
+        inputModalInput.type = "text";
+        inputModalInput.maxLength = 10;
+        inputModalInput.placeholder = "Your name";
+        inputModalInput.style.position = "absolute";
+        inputModalInput.style.fontFamily = "Orbitron";
+        inputModalInput.style.fontSize = "20px";
+        inputModalInput.style.fontWeight = "bold";
+        inputModalInput.style.textAlign = "center";
+        inputModalInput.style.width = "300px";
+        inputModalInput.style.height = "35px";
+        inputModalInput.style.background = "#111";
+        inputModalInput.style.color = "#fff";
+        inputModalInput.style.border = "2px solid #ffff00";
+        inputModalInput.style.borderRadius = "8px";
+        inputModalInput.style.padding = "0 10px";
+        inputModalInput.style.outline = "none";
+
+        // Save button
+        inputModalButton = document.createElement("button");
+        inputModalButton.textContent = "SAVE";
+        inputModalButton.style.position = "absolute";
+        inputModalButton.style.fontFamily = "Orbitron";
+        inputModalButton.style.fontSize = "18px";
+        inputModalButton.style.fontWeight = "bold";
+        inputModalButton.style.width = "150px";
+        inputModalButton.style.height = "40px";
+        inputModalButton.style.background = "#00ff66";
+        inputModalButton.style.color = "#000";
+        inputModalButton.style.border = "none";
+        inputModalButton.style.borderRadius = "8px";
+        inputModalButton.style.cursor = "pointer";
+        inputModalButton.style.transition = "background 0.2s";
+
+        // Position input and button (centered on screen)
+        function positionModalElements() {
+            const canvasRect = app.view.getBoundingClientRect();
+            const scale = app.stage.scale.x;
+            const centerX = canvasRect.left + canvasRect.width / 2;
+            const centerY = canvasRect.top + canvasRect.height / 2;
+            
+            inputModalInput.style.left = `${centerX - 150}px`;
+            inputModalInput.style.top = `${centerY - 5}px`;
+            inputModalInput.style.transform = `scale(${scale}) translate(-50%, -50%)`;
+            inputModalInput.style.transformOrigin = "center";
+            
+            inputModalButton.style.left = `${centerX - 75}px`;
+            inputModalButton.style.top = `${centerY + 45}px`;
+            inputModalButton.style.transform = `scale(${scale}) translate(-50%, -50%)`;
+            inputModalButton.style.transformOrigin = "center";
+        }
+
+        positionModalElements();
+        document.body.appendChild(inputModalInput);
+        document.body.appendChild(inputModalButton);
+        inputModalInput.focus();
+
+        // Save handler
+        function saveName() {
+            if (!inputModalInput.value.trim()) return;
+            const playerName = inputModalInput.value.trim();
+            
+            // Clean up resize handler
+            if (inputModalInput._resizeHandler) {
+                window.removeEventListener("resize", inputModalInput._resizeHandler);
+            }
+            
+            // Clean up
+            gameOverScene.removeChild(inputModalContainer);
+            document.body.removeChild(inputModalInput);
+            document.body.removeChild(inputModalButton);
+            inputModalContainer = null;
+            inputModalInput = null;
+            inputModalButton = null;
+            
+            callback(playerName);
+        }
+
+        inputModalInput.addEventListener("keydown", e => {
+            if (e.key === "Enter") saveName();
+        });
+        inputModalButton.addEventListener("click", saveName);
+        inputModalButton.addEventListener("mouseenter", () => {
+            inputModalButton.style.background = "#ffff66";
+        });
+        inputModalButton.addEventListener("mouseleave", () => {
+            inputModalButton.style.background = "#00ff66";
+        });
+
+        // Update position on resize
+        const resizeHandler = () => positionModalElements();
+        window.addEventListener("resize", resizeHandler);
+        // Store handler for cleanup if needed (we'll clean up on save)
+        inputModalInput._resizeHandler = resizeHandler;
+    }
 
     // End game
     function endGame(win) {
@@ -1190,11 +1327,27 @@
         }, 1000),loseSound.play());
         stopSpawning();
         gameOver = true;
+        gameSceneBgContainer.visible = false;
         bulletCollectibleContainer.visible = false;
         playerEnemyContainer.visible = false;
         gameOverScene.removeChildren();
         gameOverScene.visible = true;
         disableOverlay();
+        
+        // Clean up any existing input modal
+        if (inputModalContainer) {
+            gameOverScene.removeChild(inputModalContainer);
+            if (inputModalInput && inputModalInput.parentNode) {
+                document.body.removeChild(inputModalInput);
+            }
+            if (inputModalButton && inputModalButton.parentNode) {
+                document.body.removeChild(inputModalButton);
+            }
+            inputModalContainer = null;
+            inputModalInput = null;
+            inputModalButton = null;
+        }
+        
         // Clear any existing timeout before setting a new one
         if (backgroundMusicTimeout) {
             clearTimeout(backgroundMusicTimeout);
@@ -1205,329 +1358,375 @@
             backgroundMusicTimeout = null;
         }, 2500);
 
-        // End game background
-        const endBg = new PIXI.Graphics();
-        const gradient = app.renderer.generateTexture((() => {
-            const g = new PIXI.Graphics();
-            g.beginTextureFill({ color: 0x111827, alpha: 0.8 });
-            g.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-            g.endFill();
-            g.beginTextureFill({ color: 0x000000, alpha: 0.5 });
-            g.drawRect(0, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT / 2);
-            g.endFill();
-            return g;
-        })());
-        endBg.beginTextureFill({ texture: gradient });
-        endBg.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-        endBg.endFill();
-        gameOverScene.addChild(endBg);
+        // Background - match start scene style (grid pattern)
+        const bgGraphics = new PIXI.Graphics();
+        
+        // Dark base background
+        bgGraphics.beginFill(0x050505);
+        bgGraphics.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        bgGraphics.endFill();
+        
+        // Subtle grid lines (military tech aesthetic)
+        bgGraphics.lineStyle(1, 0x00ff66, 0.15); // Subtle green grid
+        for (let x = 0; x < GAME_WIDTH; x += 50) {
+            bgGraphics.moveTo(x, 0);
+            bgGraphics.lineTo(x, GAME_HEIGHT);
+        }
+        for (let y = 0; y < GAME_HEIGHT; y += 50) {
+            bgGraphics.moveTo(0, y);
+            bgGraphics.lineTo(GAME_WIDTH, y);
+        }
+        gameOverScene.addChild(bgGraphics);
 
-        // Mission Complete / Failed
+        // Add animated particles (like start scene)
+        const particleContainer = new PIXI.Container();
+        const particles = [];
+        for (let i = 0; i < 60; i++) {
+            const particle = new PIXI.Graphics();
+            const size = Math.random() * 3 + 1;
+            const alpha = Math.random() * 0.5 + 0.3;
+            particle.beginFill(0x00ff66, alpha);
+            particle.drawCircle(0, 0, size);
+            particle.endFill();
+            
+            const particleData = {
+                sprite: particle,
+                x: Math.random() * GAME_WIDTH,
+                y: Math.random() * GAME_HEIGHT,
+                speed: Math.random() * 0.8 + 0.3,
+                phase: Math.random() * Math.PI * 2,
+            };
+            
+            particle.x = particleData.x;
+            particle.y = particleData.y;
+            particles.push(particleData);
+            particleContainer.addChild(particle);
+        }
+        gameOverScene.addChild(particleContainer);
+        
+        // Animate particles
+        app.ticker.add(() => {
+            if (particleContainer && gameOverScene.visible && particles.length > 0) {
+                const time = Date.now() / 1000;
+                particles.forEach((p) => {
+                    p.y += p.speed;
+                    p.sprite.alpha = 0.3 + Math.sin(time * 2 + p.phase) * 0.4;
+                    if (p.y > GAME_HEIGHT + 10) {
+                        p.y = -10;
+                        p.x = Math.random() * GAME_WIDTH;
+                    }
+                    p.sprite.x = p.x;
+                    p.sprite.y = p.y;
+                });
+            }
+        });
+
+        // Calculate score
+        let score = 0;
+        if (win) { score = 60 - elapsedTime; }
+
+        // Main content container (centered)
+        const mainContentContainer = new PIXI.Container();
+        mainContentContainer.x = GAME_WIDTH / 2;
+        mainContentContainer.y = 150;
+        gameOverScene.addChild(mainContentContainer);
+
+        // Result Card (Mission Complete/Failed + Score)
+        const resultCard = new PIXI.Container();
+        resultCard.y = 0;
+        
+        const resultCardBg = new PIXI.Graphics();
+        resultCardBg.beginFill(0x000000, 0.75);
+        resultCardBg.drawRoundedRect(-280, -60, 560, 120, 15);
+        resultCardBg.endFill();
+        resultCardBg.lineStyle(3, win ? 0x00ff66 : 0xff3333, 1);
+        resultCardBg.drawRoundedRect(-280, -60, 560, 120, 15);
+        resultCard.addChild(resultCardBg);
+
         const msg = win ? "Mission Complete!" : "Mission Failed";
         const resultText = new PIXI.Text(msg, {
             fill: win ? "#00ff66" : "#ff3333",
-            fontSize: 48,
+            fontSize: 36,
             fontFamily: "Orbitron",
             fontWeight: "bold"
         });
         resultText.anchor.set(0.5);
-        resultText.x = GAME_WIDTH / 2;
-        resultText.y = 80;
-        gameOverScene.addChild(resultText);
+        resultText.y = -25;
+        resultCard.addChild(resultText);
 
-        // Calculate score
-        let score = 0; // default score
-        if (win) { score = 60 - elapsedTime; }
-
-        // Label (always white)
-        const labelText = new PIXI.Text("Score:", {
+        const scoreLabel = new PIXI.Text("Score:", {
             fill: "#ffffff",
-            fontSize: 28,
-            fontWeight: "bold",
+            fontSize: 24,
             fontFamily: "Orbitron"
         });
+        scoreLabel.anchor.set(0.5);
+        scoreLabel.x = -40;
+        scoreLabel.y = 15;
+        resultCard.addChild(scoreLabel);
 
-        // Value (green/red)
-        const valueText = new PIXI.Text(`${score}`, {
+        const scoreValue = new PIXI.Text(`${score}`, {
             fill: "#00ff66",
             fontSize: 28,
             fontWeight: "bold",
             fontFamily: "Orbitron"
         });
+        scoreValue.anchor.set(0.5);
+        scoreValue.x = 50;
+        scoreValue.y = 15;
+        resultCard.addChild(scoreValue);
 
-        // Compute total width (with small spacing)
-        const spacing = 10;
-        const totalWidth = labelText.width + spacing + valueText.width;
+        mainContentContainer.addChild(resultCard);
 
-        // Center the whole block
-        const startX = (GAME_WIDTH - totalWidth) / 2;
-        const y = 105;
-
-        labelText.x = startX;
-        labelText.y = y;
-
-        valueText.x = startX + labelText.width + spacing;
-        valueText.y = y;
-
-        gameOverScene.addChild(labelText, valueText);
+        // Leaderboard Card - sized to fit only the list
+        const leaderboardCard = new PIXI.Container();
+        leaderboardCard.y = 180;
+        
+        // Card dimensions: title at top, list below, with padding
+        const cardWidth = 560;
+        const cardHeight = 220; // Enough for title + 5 entries with padding
+        
+        const leaderboardCardBg = new PIXI.Graphics();
+        leaderboardCardBg.beginFill(0x000000, 0.75);
+        leaderboardCardBg.drawRoundedRect(-cardWidth/2, -cardHeight/2, cardWidth, cardHeight, 15);
+        leaderboardCardBg.endFill();
+        leaderboardCardBg.lineStyle(3, 0xffff00, 1);
+        leaderboardCardBg.drawRoundedRect(-cardWidth/2, -cardHeight/2, cardWidth, cardHeight, 15);
+        leaderboardCard.addChild(leaderboardCardBg);
 
         // Leaderboard title
         const lbTitle = new PIXI.Text("Top 5 Soldiers", {
             fill: "#ffff00",
-            fontSize: 32,
+            fontSize: 28,
             fontWeight: "bold",
-            fontFamily: "Orbitron"
+            fontFamily: "Orbitron",
+            letterSpacing: 3
         });
         lbTitle.anchor.set(0.5);
-        lbTitle.x = GAME_WIDTH / 2;
-        lbTitle.y = 210;
-        gameOverScene.addChild(lbTitle);
+        lbTitle.y = -cardHeight/2 + 30;
+        leaderboardCard.addChild(lbTitle);
 
-        const endgameSpriteTexture = PIXI.Assets.get('assets/soldier-sprite-endgame.png');
-
-        const endgameSpriteLeft = new PIXI.Sprite(endgameSpriteTexture);
-        endgameSpriteLeft.anchor.set(1,0.5);
-        endgameSpriteLeft.scale.set(0.07);
-        endgameSpriteLeft.x = (GAME_WIDTH - lbTitle.width) / 2;
-        endgameSpriteLeft.y = 210;
-        gameOverScene.addChild(endgameSpriteLeft);
-
-        const endgameSpriteRight = new PIXI.Sprite(endgameSpriteTexture);
-        endgameSpriteRight.anchor.set(0,0.5);
-        endgameSpriteRight.scale.set(0.07);
-        endgameSpriteRight.x = (GAME_WIDTH + lbTitle.width) / 2;
-        endgameSpriteRight.y = 210;
-        gameOverScene.addChild(endgameSpriteRight);
-
-        // Leaderboard
+        // Leaderboard container
         const leaderboardContainer = new PIXI.Container();
-        gameOverScene.addChild(leaderboardContainer);
+        leaderboardContainer.y = -cardHeight/2 + 70; // Below title
+        leaderboardCard.addChild(leaderboardContainer);
 
-        // Check if player qualifies for leaderboard
+        // Check if player qualifies
         const worstEntry = leaderboard[leaderboard.length - 1];
         let qualifies = score > worstEntry.score;
         if (qualifies) {
             leaderboardApplauseSound.play();
-            // Insert placeholder with a marker until we collect name
-            leaderboard.push({ name: " ???", score, pending: true });
+            leaderboard.push({ name: null, score, pending: true });
             leaderboard.sort((a, b) => b.score - a.score);
             leaderboard = leaderboard.slice(0, 5);
         }
 
-        // Clear previous entries
-        leaderboardContainer.removeChildren().forEach(c => c.destroy());
+        // Render leaderboard (rowWidth should fit within card which is 560px wide, leaving padding)
+        const rowWidth = 520;
+        const leaderboardYStart = 0;
+        renderLeaderboard(leaderboardContainer, leaderboard, leaderboardYStart, rowWidth);
 
-         // Set a fixed row width (so scores align neatly)
-        const rowWidth = 255;
-
-        // Draw each entry
-        let leaderboardYStart = 250;
-        leaderboard.forEach((entry, i) => {
-            const yPos = leaderboardYStart + i * 30;
-
-            // Row container
-            const row = new PIXI.Container();
-            row.y = yPos;
-
-            // Rank + name (white, left aligned)
-            const nameText = new PIXI.Text(
-                `${i + 1}. ${entry.name}`,
-                { fill: "#ffffff", fontSize: 24, fontFamily: "Orbitron" }
-            );
-            nameText.anchor.set(0, 0.5);  // left aligned
-            nameText.x = 0;
-
-            // Score (green, right aligned within row)
-            const scoreText = new PIXI.Text(
-                `${entry.score}`,
-                { fill: "#00ff66", fontSize: 24, fontFamily: "Orbitron" }
-            );
-            scoreText.anchor.set(1, 0.5); // right aligned
-            scoreText.x = rowWidth;
-
-            row.addChild(nameText, scoreText);
-
-            // Center row container as a block
-            row.x = GAME_WIDTH / 2 - rowWidth / 2;
-
-            leaderboardContainer.addChild(row);
-        });
-
-        // If qualified → ask for name with input box
+        // Show input modal if qualified
         if (qualifies) {
-            // Find the index of the pending "???" entry
-            const index = leaderboard.findIndex(e => e.pending);
-            const rowY = leaderboardYStart + index * 30;
+            const pendingIndex = leaderboard.findIndex(e => e.pending);
+            pendingLeaderboardIndex = pendingIndex;
             
-            // Determine input box position (within canvas coords)
-            const inputX = GAME_WIDTH / 2 - rowWidth / 2;
-            const inputY = rowY;    
-
-            // Create input overlay
-            const input = document.createElement("input");
-            input.className = "lb-input";
-            input.type = "text";
-            input.maxLength = 10;
-            input.placeholder = "Enter your name";
-            input.style.position = "absolute";
-            input.style.fontWeight = "bold";
-            input.style.background = "black";
-            input.style.color = "white";
-            input.style.border = "none";
-            input.style.outline = "none";
-            input.style.textAlign = "left";
-
-            // Create save Button
-            const button = document.createElement("button");
-            button.className = "lb-save";
-            button.textContent = "Save";
-            button.style.position = "absolute";
-            button.style.padding = "0.3em 0.5em";
-            button.style.borderRadius = "0.5em";
-            button.style.border = "none";
-            button.style.background = "#00ff66";
-            button.style.color = "#000";
-            button.style.fontWeight = "bold";
-            button.style.cursor = "pointer";
-
-            // Save references for positioning
-            activeInput = input;
-            saveButton = button;
-            inputRowX = inputX;
-            inputRowY = inputY;
-            inputRowWidth = rowWidth;
-            inputLeaderboardContainer = leaderboardContainer;
-
-            // Initial positioning before appending input and button
-            positionLeaderboardInputAndSaveBtn();
-
-            document.body.appendChild(input);
-            document.body.appendChild(button);
-            input.focus();
-
-            function saveName() {
-                if (!input.value.trim()) return;
-                const playerName = input.value.trim();
-                leaderboard[index].name = playerName;
-                delete leaderboard[index].pending;
-
-                // Clean up input
-                document.body.removeChild(input);
-                document.body.removeChild(button);
-                activeInput = null;
-                saveButton = null;
-
-                // Redraw leaderboard
-                leaderboardContainer.removeChildren().forEach(c => c.destroy());
-                leaderboard.forEach((entry, i) => {
-                    const yPos = leaderboardYStart + i * 30;
-
-                    // Row container
-                    const row = new PIXI.Container();
-                    row.y = yPos;
-
-                    // Rank + name (white, left aligned)
-                    const nameText = new PIXI.Text(
-                        `${i + 1}. ${entry.name}`,
-                        { fill: "#ffffff", fontSize: 24, fontFamily: "Orbitron" }
-                    );
-                    nameText.anchor.set(0, 0.5);  // left aligned
-                    nameText.x = 0;
-                    nameText.y = 0;
-
-                    // Score (green, right aligned within row)
-                    const scoreText = new PIXI.Text(
-                        `${entry.score}`,
-                        { fill: "#00ff66", fontSize: 24, fontFamily: "Orbitron" }
-                    );
-                    scoreText.anchor.set(1, 0.5); // right aligned
-                    scoreText.x = rowWidth;
-                    scoreText.y = 0;
-
-                    row.addChild(nameText, scoreText);
-
-                    // Center row container as a block
-                    row.x = GAME_WIDTH / 2 - rowWidth / 2;
-
-                    leaderboardContainer.addChild(row);
+            setTimeout(() => {
+                showHighScoreInputModal(pendingIndex, (playerName) => {
+                    leaderboard[pendingIndex].name = playerName;
+                    delete leaderboard[pendingIndex].pending;
+                    pendingLeaderboardIndex = null;
+                    renderLeaderboard(leaderboardContainer, leaderboard, leaderboardYStart, rowWidth);
                 });
-            }
-
-           input.addEventListener("keydown", e => e.key === "Enter" && saveName());
-
-            button.addEventListener("click", saveName);
+            }, 500);
         }
 
-        // Album link
-        const link = new PIXI.Text("Listen to 🎵SOLDIER", {
-            fill: "#44ccff",
-            fontSize: 38,
-            fontWeight: "bold",
-            fontFamily: "Orbitron"
-        });
-        link.anchor.set(0.5);
-        link.x = GAME_WIDTH / 2;
-        link.y = GAME_HEIGHT - 140;
-        link.interactive = true;
-        link.buttonMode = true;
-        link.cursor = "pointer";
-        link.on("pointerover", () => link.style.fill = "#88ddff");
-        link.on("pointerout", () => link.style.fill = "#44ccff");
-        link.on("pointerdown", () => {
-            window.open("https://github.com/ArinzeGit", "_blank");
-        });
-        gameOverScene.addChild(link);
+        mainContentContainer.addChild(leaderboardCard);
 
-        // Back to Menu button
+        // Bottom section: Album + Action buttons (positioned below leaderboard card)
+        const bottomContainer = new PIXI.Container();
+        bottomContainer.x = GAME_WIDTH / 2;
+        // Position below leaderboard card in scene coordinates:
+        // mainContentContainer.y (150) + leaderboardCard.y (180) + cardHeight/2 (110) + spacing (80 for taller button)
+        bottomContainer.y = mainContentContainer.y + leaderboardCard.y + cardHeight/2 + 80;
+        gameOverScene.addChild(bottomContainer);
+
+        // All buttons in one row: Back to Menu | Get SOLDIER Album (with art) | Play Again
+        const buttonsContainer = new PIXI.Container();
+        buttonsContainer.y = 0;
+
+        // Back to Menu button (left)
+        const backToMenuContainer = new PIXI.Container();
+        backToMenuContainer.x = -370; // More spacing from center
+        
+        const backBtnBg = new PIXI.Graphics();
+        const backBtnWidth = 200;
+        const backBtnHeight = 40;
+        backBtnBg.beginFill(0x000000, 0.75);
+        backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
+        backBtnBg.endFill();
+        backBtnBg.lineStyle(2, 0xffffff, 1);
+        backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
+        backToMenuContainer.addChild(backBtnBg);
+
         const backToMenu = new PIXI.Text("↩ Back to Menu", {
             fill: "#ffffff",
-            fontSize: 28,
+            fontSize: 20,
             fontWeight: "bold",
             fontFamily: "Orbitron"
         });
-        backToMenu.interactive = true;
-        backToMenu.buttonMode = true;
-        backToMenu.cursor = "pointer";
-        backToMenu.on("pointerover", () => backToMenu.style.fill = "#ffff66");
-        backToMenu.on("pointerout", () => backToMenu.style.fill = "#ffffff");
-        backToMenu.on("pointerdown", () => {
+        backToMenu.anchor.set(0.5);
+        backToMenuContainer.addChild(backToMenu);
+
+        backToMenuContainer.interactive = true;
+        backToMenuContainer.buttonMode = true;
+        backToMenuContainer.cursor = "pointer";
+        backToMenuContainer.on("pointerover", () => {
+            backBtnBg.clear();
+            backBtnBg.beginFill(0x333333, 0.85);
+            backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
+            backBtnBg.endFill();
+            backBtnBg.lineStyle(3, 0xffff66, 1);
+            backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
+            backToMenu.style.fill = "#ffff66";
+        });
+        backToMenuContainer.on("pointerout", () => {
+            backBtnBg.clear();
+            backBtnBg.beginFill(0x000000, 0.75);
+            backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
+            backBtnBg.endFill();
+            backBtnBg.lineStyle(2, 0xffffff, 1);
+            backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
+            backToMenu.style.fill = "#ffffff";
+        });
+        backToMenuContainer.on("pointerdown", () => {
             cleanUnsavedEntries();
             gameOverScene.visible = false;
             gameScene.visible = false;
             startScene.visible = true;
-            // Music button won't reappear once dismissed - music continues from endgame
-            fixViewport();
         });
 
-        // Play Again button
-        const playAgain = new PIXI.Text("▶ Play Again", {
-            fill: "#ffffff",
-            fontSize: 28,
+        // Album button with art inside (center)
+        const albumButton = new PIXI.Container();
+        albumButton.x = 0;
+        
+        const albumBtnBg = new PIXI.Graphics();
+        const albumBtnWidth = 460; // Wider to prevent text overflow
+        const albumBtnHeight = 90; // Increased height to accommodate art
+        albumBtnBg.beginFill(0x000000, 1); // Fully opaque
+        albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
+        albumBtnBg.endFill();
+        albumBtnBg.lineStyle(2, 0xffff00, 1);
+        albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
+        albumButton.addChild(albumBtnBg);
+
+        // Album art thumbnail (inside button, left side)
+        // Make it slightly smaller to fit within the button border (2px border means 4px total inset needed)
+        const artSize = 88; // Slightly smaller to leave space for the 2px border
+        
+        const albumArtThumb = new PIXI.Sprite(PIXI.Assets.get('assets/soldier-album-art.png'));
+        albumArtThumb.anchor.set(0.5);
+        albumArtThumb.width = artSize;
+        albumArtThumb.height = artSize;
+        const artX = -albumBtnWidth/2 + artSize/2 + 1; // Positioned with inset from left edge
+        albumArtThumb.x = artX;
+        
+        // Add rounded corners mask to match button's rounded corners
+        const artMask = new PIXI.Graphics();
+        artMask.beginFill(0xffffff);
+        artMask.drawRoundedRect(-artSize/2, -artSize/2, artSize, artSize, 11); // Slightly smaller radius for smaller art
+        artMask.endFill();
+        artMask.x = artX; // Position mask at same location as art
+        albumArtThumb.mask = artMask;
+        albumButton.addChild(artMask);
+        albumButton.addChild(albumArtThumb);
+
+        // Album button text (right side of art)
+        const albumBtnText = new PIXI.Text("🎵 Get the SOLDIER Album", {
+            fill: "#ffff00",
+            fontSize: 22,
             fontWeight: "bold",
             fontFamily: "Orbitron"
         });
-        playAgain.interactive = true;
-        playAgain.buttonMode = true;
-        playAgain.cursor = "pointer";
-        playAgain.on("pointerover", () => playAgain.style.fill = "#ffff66");
-        playAgain.on("pointerout", () => playAgain.style.fill = "#ffffff");
-        playAgain.on("pointerdown", resetGame);
+        albumBtnText.anchor.set(0, 0.5);
+        // Position text to the right of the art (art center + half art size + gap)
+        albumBtnText.x = artX + artSize/2 + 8; // To the right of art with small gap
+        albumButton.addChild(albumBtnText);
+
+        albumButton.interactive = true;
+        albumButton.buttonMode = true;
+        albumButton.cursor = "pointer";
+        albumButton.on("pointerover", () => {
+            albumBtnBg.clear();
+            albumBtnBg.beginFill(0x1a1a1a, 1); // Lighter background, fully opaque
+            albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
+            albumBtnBg.endFill();
+            albumBtnBg.lineStyle(3, 0xffff00, 1); // Thicker, brighter border
+            albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
+            albumBtnText.style.fill = "#ffff99"; // Brighter text
+            albumButton.scale.set(1.02); // Slight scale up for emphasis
+        });
+        albumButton.on("pointerout", () => {
+            albumBtnBg.clear();
+            albumBtnBg.beginFill(0x000000, 1); // Back to opaque black
+            albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
+            albumBtnBg.endFill();
+            albumBtnBg.lineStyle(2, 0xffff00, 1); // Normal border
+            albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
+            albumBtnText.style.fill = "#ffff00"; // Normal text color
+            albumButton.scale.set(1.0); // Reset scale
+        });
+        albumButton.on("pointerdown", () => {
+            window.open("https://github.com/ArinzeGit", "_blank");
+        });
+
+        // Play Again button (right)
+        const playAgainContainer = new PIXI.Container();
+        playAgainContainer.x = 370; // More spacing from center
         
-        // Compute total width (with small spacing)
-        const spacing_ = 500;
-        const totalWidth_ = backToMenu.width + spacing_ + playAgain.width;
+        const playBtnBg = new PIXI.Graphics();
+        const playBtnWidth = 200;
+        const playBtnHeight = 40;
+        playBtnBg.beginFill(0x00ff66, 0.3);
+        playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+        playBtnBg.endFill();
+        playBtnBg.lineStyle(2, 0x00ff66, 1);
+        playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+        playAgainContainer.addChild(playBtnBg);
 
-        // Center the whole block
-        const startX_ = (GAME_WIDTH - totalWidth_) / 2;
-        const y_ = GAME_HEIGHT - 90;
+        const playAgain = new PIXI.Text("▶ Play Again", {
+            fill: "#00ff66",
+            fontSize: 20,
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
+        });
+        playAgain.anchor.set(0.5);
+        playAgainContainer.addChild(playAgain);
 
-        backToMenu.x = startX_;
-        backToMenu.y = y_;
+        playAgainContainer.interactive = true;
+        playAgainContainer.buttonMode = true;
+        playAgainContainer.cursor = "pointer";
+        playAgainContainer.on("pointerover", () => {
+            playBtnBg.clear();
+            playBtnBg.beginFill(0x00ff66, 0.4);
+            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+            playBtnBg.endFill();
+            playBtnBg.lineStyle(3, 0x00ff66, 1);
+            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+            playAgain.style.fill = "#ffff66";
+        });
+        playAgainContainer.on("pointerout", () => {
+            playBtnBg.clear();
+            playBtnBg.beginFill(0x00ff66, 0.3);
+            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+            playBtnBg.endFill();
+            playBtnBg.lineStyle(2, 0x00ff66, 1);
+            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+            playAgain.style.fill = "#00ff66";
+        });
+        playAgainContainer.on("pointerdown", resetGame);
 
-        playAgain.x = startX_ + backToMenu.width + spacing_;
-        playAgain.y = y_;
-
-        gameOverScene.addChild(backToMenu, playAgain);
+        buttonsContainer.addChild(backToMenuContainer, albumButton, playAgainContainer);
+        bottomContainer.addChild(buttonsContainer);
     }
 
     // Reset game state
@@ -1545,6 +1744,7 @@
 
         startScene.visible = false;
         gameScene.visible = true;
+        gameSceneBgContainer.visible = true;
         bulletCollectibleContainer.visible = true;
         playerEnemyContainer.visible = true;
         uiContainer.visible = true;
@@ -1588,14 +1788,28 @@
     }
 
     function cleanUnsavedEntries() {
-        // Clear any existing input boxes and save buttons 
-        document.querySelectorAll(".lb-input, .lb-save").forEach(el => el.remove());
-
-        activeInput = null;
-        saveButton = null;
+        // Clear any existing input modal
+        if (inputModalContainer) {
+            gameOverScene.removeChild(inputModalContainer);
+            inputModalContainer = null;
+        }
+        if (inputModalInput && inputModalInput.parentNode) {
+            if (inputModalInput._resizeHandler) {
+                window.removeEventListener("resize", inputModalInput._resizeHandler);
+            }
+            document.body.removeChild(inputModalInput);
+            inputModalInput = null;
+        }
+        if (inputModalButton && inputModalButton.parentNode) {
+            document.body.removeChild(inputModalButton);
+            inputModalButton = null;
+        }
+        
+        // Clean up pending entries
         leaderboard.forEach(entry => {
             if (entry.pending) delete entry.pending;
         });
+        pendingLeaderboardIndex = null;
     }
 
     // Start scene animation handled above (particles and title glow)
