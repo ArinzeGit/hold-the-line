@@ -1009,6 +1009,64 @@
             boundsA.y < boundsB.y + boundsB.height;
     }
 
+    // Create explosion effect when enemy is hit
+    function createExplosionEffect(x, y, color = 0xff3333) {
+        const explosionContainer = new PIXI.Container();
+        explosionContainer.x = x;
+        explosionContainer.y = y;
+        playerEnemyContainer.addChild(explosionContainer);
+
+        const particleCount = 12;
+        const particles = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = new PIXI.Graphics();
+            const angle = (i / particleCount) * Math.PI * 2;
+            const speed = 2 + Math.random() * 3;
+            const size = 3 + Math.random() * 3;
+            
+            particle.beginFill(color, 1);
+            particle.drawCircle(0, 0, size);
+            particle.endFill();
+            explosionContainer.addChild(particle);
+
+            particles.push({
+                sprite: particle,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1.0,
+                decay: 0.02 + Math.random() * 0.02
+            });
+        }
+
+        // Animate particles
+        const animateExplosion = () => {
+            let allDead = true;
+            
+            particles.forEach(p => {
+                if (p.life > 0) {
+                    allDead = false;
+                    p.sprite.x += p.vx;
+                    p.sprite.y += p.vy;
+                    p.vx *= 0.95; // Friction
+                    p.vy *= 0.95;
+                    p.life -= p.decay;
+                    p.sprite.alpha = p.life;
+                    p.sprite.scale.set(p.life);
+                }
+            });
+
+            if (allDead) {
+                explosionContainer.removeChildren().forEach(c => c.destroy());
+                playerEnemyContainer.removeChild(explosionContainer);
+                explosionContainer.destroy();
+                app.ticker.remove(animateExplosion);
+            }
+        };
+
+        app.ticker.add(animateExplosion);
+    }
+
     // Game loop
     app.ticker.add(() => {
         if (gameOver) return;
@@ -1065,6 +1123,15 @@
                 if (pr.destroyed) continue;
 
                 if (hitTest(pr, en)) {
+                    // Use enemy's position directly (both are in same container)
+                    // Enemy sprite is centered (anchor 0.5, 0.5) so en.x, en.y is the center
+                    const explosionX = en.x;
+                    const explosionY = en.y;
+                    
+                    // Create explosion effect (use enemy's color if available)
+                    const enemyColor = en.color || 0xff3333;
+                    createExplosionEffect(explosionX, explosionY, enemyColor);
+                    
                     playerEnemyContainer.removeChild(en);
                     en.destroy();
                     clearInterval(en.shootInterval); // stop shooting
