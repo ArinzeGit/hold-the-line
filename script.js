@@ -133,8 +133,6 @@
     // Asset loading function
     async function loadAllAssets() {
         const assetPaths = [
-            'assets/game-scene-bg.png',
-            'assets/hold-the-line-art.png',
             'assets/soldier-album-art.png',
             'assets/soldier-sprite-gamePlay.png',
             'assets/soldier-sprite-endgame.png',
@@ -709,12 +707,63 @@
         }
     });
 
-    // Game Scene Background
-    const backgroundTexture = PIXI.Assets.get("assets/game-scene-bg.png");
-    const gameSceneBg = new PIXI.Sprite(backgroundTexture);
-    gameSceneBg.width = GAME_WIDTH;
-    gameSceneBg.height = GAME_HEIGHT;
-    gameSceneBgContainer.addChild(gameSceneBg);
+    // Game Scene Background - Animated grid with subtle movement
+    const gameSceneBgGraphics = new PIXI.Graphics();
+    
+    // Store grid offset for animation
+    let gridOffsetX = 0;
+    let gridOffsetY = 0;
+    const gridSpacing = 50;
+    
+    // Function to draw the grid
+    const drawGameGrid = () => {
+        // Clear everything and redraw
+        gameSceneBgGraphics.clear();
+        
+        // Dark base background
+        gameSceneBgGraphics.beginFill(0x050505);
+        gameSceneBgGraphics.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        gameSceneBgGraphics.endFill();
+        
+        // Draw grid lines with offset for animation
+        gameSceneBgGraphics.lineStyle(1, 0x00ff66, 0.15); // Subtle green grid
+        
+        // Calculate the starting position accounting for offset
+        const startX = Math.floor(-gridOffsetX / gridSpacing) * gridSpacing + (gridOffsetX % gridSpacing);
+        const startY = Math.floor(-gridOffsetY / gridSpacing) * gridSpacing + (gridOffsetY % gridSpacing);
+        
+        // Vertical lines
+        for (let x = startX; x < GAME_WIDTH; x += gridSpacing) {
+            gameSceneBgGraphics.moveTo(x, 0);
+            gameSceneBgGraphics.lineTo(x, GAME_HEIGHT);
+        }
+        
+        // Horizontal lines
+        for (let y = startY; y < GAME_HEIGHT; y += gridSpacing) {
+            gameSceneBgGraphics.moveTo(0, y);
+            gameSceneBgGraphics.lineTo(GAME_WIDTH, y);
+        }
+    };
+    
+    // Initial grid draw
+    drawGameGrid();
+    gameSceneBgContainer.addChild(gameSceneBgGraphics);
+    
+    // Animate the grid with subtle movement
+    app.ticker.add(() => {
+        if (gameScene.visible && !gameOver) {
+            // Slow, subtle movement (different speeds for parallax effect)
+            gridOffsetX += 0.05; // Horizontal movement
+            gridOffsetY += 0.03; // Vertical movement (slower for depth)
+            
+            // Wrap offsets to prevent overflow
+            if (gridOffsetX >= gridSpacing) gridOffsetX -= gridSpacing;
+            if (gridOffsetY >= gridSpacing) gridOffsetY -= gridSpacing;
+            
+            // Redraw grid with new offsets
+            drawGameGrid();
+        }
+    });
     // UI Container - Card-based design
     // Letter display card (top left)
     const letterCard = new PIXI.Container();
