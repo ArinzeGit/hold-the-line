@@ -392,7 +392,7 @@
     // Left side: Album artwork area
     const albumArtContainer = new PIXI.Container();
     // Position to ensure full visibility (album art extends 140px left from center)
-    albumArtContainer.x = 150;
+    albumArtContainer.x = 165;
     albumArtContainer.y = GAME_HEIGHT / 2;
     startContentContainer.addChild(albumArtContainer);
 
@@ -432,7 +432,7 @@
 
     // Right side: Game content (positioned to avoid overlap with album art)
     const gameContentContainer = new PIXI.Container();
-    gameContentContainer.x = 620; // Moved right to clear album art (which ends around 290px)
+    gameContentContainer.x = 655; // Moved right to clear album art (which ends around 290px)
     gameContentContainer.y = GAME_HEIGHT / 2;
     startContentContainer.addChild(gameContentContainer);
 
@@ -562,12 +562,17 @@
         pointingFinger.anchor.set(0.5);
         pointingFinger.y = -35;
         
-        // Animate the pointing finger (bounce/pulse effect)
+        // Animate the pointing finger and button pulse (bounce/pulse effect)
         let fingerOffset = 0;
+        let isMusicButtonHovered = false;
         app.ticker.add(() => {
-            if (pointingFinger && musicButtonContainer && musicButtonContainer.visible) {
+            if (pointingFinger && musicButtonContainer && musicButtonContainer.visible && !isMusicButtonHovered) {
                 fingerOffset += 0.1;
-                pointingFinger.y = -35 + Math.sin(fingerOffset) * 5; // Bounce animation
+                // Bounce the finger
+                pointingFinger.y = -35 + Math.sin(fingerOffset) * 5;
+                // Pulse the button scale (same frequency as finger)
+                const pulseScale = 1 + Math.sin(fingerOffset) * 0.03; // Very subtle pulse (3%)
+                musicButtonContainer.scale.set(pulseScale);
             }
         });
 
@@ -597,6 +602,7 @@
         musicButtonContainer.cursor = "pointer";
         
         musicButtonContainer.on("pointerover", () => {
+            isMusicButtonHovered = true;
             musicBtnBg.clear();
             musicBtnBg.beginFill(0x1a1a1a, 0.7);
             musicBtnBg.drawRoundedRect(-musicBtnWidth/2, -musicBtnHeight/2, musicBtnWidth, musicBtnHeight, 10);
@@ -604,9 +610,11 @@
             musicBtnBg.lineStyle(3, 0xffff00, 1);
             musicBtnBg.drawRoundedRect(-musicBtnWidth/2, -musicBtnHeight/2, musicBtnWidth, musicBtnHeight, 10);
             musicButtonText.style.fill = "#ffff99";
+            musicButtonContainer.scale.set(1.0); // Reset scale on hover
         });
         
         musicButtonContainer.on("pointerout", () => {
+            isMusicButtonHovered = false;
             musicBtnBg.clear();
             musicBtnBg.beginFill(0x000000, 0.6);
             musicBtnBg.drawRoundedRect(-musicBtnWidth/2, -musicBtnHeight/2, musicBtnWidth, musicBtnHeight, 10);
@@ -614,6 +622,7 @@
             musicBtnBg.lineStyle(2, 0xffff00, 0.8);
             musicBtnBg.drawRoundedRect(-musicBtnWidth/2, -musicBtnHeight/2, musicBtnWidth, musicBtnHeight, 10);
             musicButtonText.style.fill = "#ffff00";
+            // Scale will be controlled by pulse animation, not reset to 1.0
         });
         
         musicButtonContainer.on("pointerdown", () => {
