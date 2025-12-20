@@ -1268,10 +1268,36 @@
                     collectedLetters.add(c.letter);
                     gotCollectibleSound.play();
 
-                    // Update that letter's color
+                    // Update that letter's color and add attention-grabbing animation
                     for (let i = 0; i < TARGET_WORD.length; i++) {
                         if (TARGET_WORD[i] === c.letter) {
-                            letterTexts[i].style.fill = "#ffff00"; // bright yellow when collected
+                            const letterText = letterTexts[i];
+                            letterText.style.fill = "#ffff00"; // bright yellow when collected
+                            
+                            // Add pulse animation to draw attention
+                            const originalScale = letterText.scale.x || 1;
+                            let pulsePhase = 0;
+                            const pulseAnimation = () => {
+                                pulsePhase += 0.2;
+                                if (pulsePhase >= Math.PI * 2) {
+                                    letterText.scale.set(originalScale);
+                                    app.ticker.remove(pulseAnimation);
+                                    return;
+                                }
+                                // Pulse from 1x to 1.4x and back
+                                const scale = originalScale + Math.sin(pulsePhase) * 0.4;
+                                letterText.scale.set(scale);
+                            };
+                            app.ticker.add(pulseAnimation);
+                            
+                            // Add glow effect (yellow stroke instead of black)
+                            letterText.style.stroke = "#ffff00";
+                            letterText.style.strokeThickness = 4; // Slightly thicker for more glow
+                            
+                            // Reduce glow after animation (keep yellow stroke but thinner)
+                            setTimeout(() => {
+                                letterText.style.strokeThickness = 2; // Keep subtle glow
+                            }, 600);
                         }
                     }
                 }
@@ -1664,12 +1690,11 @@
         scoreValue.x = 50;
         scoreValue.y = 15;
         resultCard.addChild(scoreValue);
-
         mainContentContainer.addChild(resultCard);
 
         // Leaderboard Card - sized to fit only the list
         const leaderboardCard = new PIXI.Container();
-        leaderboardCard.y = 180;
+        leaderboardCard.y = 195;
         
         // Card dimensions: title at top, list below, with padding
         const cardWidth = 560;
@@ -1732,21 +1757,10 @@
 
         mainContentContainer.addChild(leaderboardCard);
 
-        // Bottom section: Album + Action buttons (positioned below leaderboard card)
-        const bottomContainer = new PIXI.Container();
-        bottomContainer.x = GAME_WIDTH / 2;
-        // Position below leaderboard card in scene coordinates:
-        // mainContentContainer.y (150) + leaderboardCard.y (180) + cardHeight/2 (110) + spacing (80 for taller button)
-        bottomContainer.y = mainContentContainer.y + leaderboardCard.y + cardHeight/2 + 80;
-        gameOverScene.addChild(bottomContainer);
-
-        // All buttons in one row: Back to Menu | Get SOLDIER Album (with art) | Play Again
-        const buttonsContainer = new PIXI.Container();
-        buttonsContainer.y = 0;
-
-        // Back to Menu button (left)
+        // Back to Menu button (will be positioned on left side of leaderboard card)
         const backToMenuContainer = new PIXI.Container();
-        backToMenuContainer.x = -370; // More spacing from center
+        backToMenuContainer.y = leaderboardCard.y; // Same y level as leaderboard
+        backToMenuContainer.x = -390; // Left side
         
         const backBtnBg = new PIXI.Graphics();
         const backBtnWidth = 200;
@@ -1795,9 +1809,61 @@
             startScene.visible = true;
         });
 
-        // Album button with art inside (center)
+        mainContentContainer.addChild(backToMenuContainer);
+
+        // Play Again button (will be positioned on right side of leaderboard card)
+        const playAgainContainer = new PIXI.Container();
+        playAgainContainer.y = leaderboardCard.y; // Same y level as leaderboard
+        playAgainContainer.x = 390; // Right side
+        
+        const playBtnBg = new PIXI.Graphics();
+        const playBtnWidth = 200;
+        const playBtnHeight = 40;
+        playBtnBg.beginFill(0x00ff66, 0.3);
+        playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+        playBtnBg.endFill();
+        playBtnBg.lineStyle(2, 0x00ff66, 1);
+        playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+        playAgainContainer.addChild(playBtnBg);
+
+        const playAgain = new PIXI.Text("▶ Play Again", {
+            fill: "#00ff66",
+            fontSize: 20,
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
+        });
+        playAgain.anchor.set(0.5);
+        playAgainContainer.addChild(playAgain);
+
+        playAgainContainer.interactive = true;
+        playAgainContainer.buttonMode = true;
+        playAgainContainer.cursor = "pointer";
+        playAgainContainer.on("pointerover", () => {
+            playBtnBg.clear();
+            playBtnBg.beginFill(0x00ff66, 0.4);
+            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+            playBtnBg.endFill();
+            playBtnBg.lineStyle(3, 0x00ff66, 1);
+            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+            playAgain.style.fill = "#ffff66";
+        });
+        playAgainContainer.on("pointerout", () => {
+            playBtnBg.clear();
+            playBtnBg.beginFill(0x00ff66, 0.3);
+            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+            playBtnBg.endFill();
+            playBtnBg.lineStyle(2, 0x00ff66, 1);
+            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
+            playAgain.style.fill = "#00ff66";
+        });
+        playAgainContainer.on("pointerdown", resetGame);
+        
+        mainContentContainer.addChild(playAgainContainer);
+
+        // Album button with art inside
         const albumButton = new PIXI.Container();
-        albumButton.x = 0;
+        albumButton.x = GAME_WIDTH / 2;
+        albumButton.y = mainContentContainer.y + leaderboardCard.y + cardHeight/2 + 85;
         
         const albumBtnBg = new PIXI.Graphics();
         const albumBtnWidth = 460; // Wider to prevent text overflow
@@ -1842,10 +1908,39 @@
         albumBtnText.x = artX + artSize/2 + 8; // To the right of art with small gap
         albumButton.addChild(albumBtnText);
 
+        // Animated pointing finger (medium skin tone) pointing at album button
+        const albumPointingFinger = new PIXI.Text("👇🏽", {
+            fontSize: 32,
+        });
+        albumPointingFinger.anchor.set(0.5);
+        albumPointingFinger.y = -albumBtnHeight/2 - 15; // Positioned above the button
+        
+        // Animate the pointing finger and button pulse effect
+        let albumFingerOffset = 0;
+        const animateAlbumFinger = () => {
+            if (albumPointingFinger && albumButton && gameOverScene.visible && !isAlbumButtonHovered) {
+                albumFingerOffset += 0.1;
+                // Bounce the finger
+                albumPointingFinger.y = -albumBtnHeight/2 - 15 + Math.sin(albumFingerOffset) * 5;
+                
+                // Pulse the button scale (same frequency as finger)
+                const pulseScale = 1 + Math.sin(albumFingerOffset) * 0.03; // Very subtle pulse (3%)
+                albumButton.scale.set(pulseScale);
+            }
+        };
+        app.ticker.add(animateAlbumFinger);
+        
+        albumButton.addChild(albumPointingFinger);
+
         albumButton.interactive = true;
         albumButton.buttonMode = true;
         albumButton.cursor = "pointer";
+        
+        // Track if button is hovered to pause pulse when hovered
+        let isAlbumButtonHovered = false;
+        
         albumButton.on("pointerover", () => {
+            isAlbumButtonHovered = true;
             albumBtnBg.clear();
             albumBtnBg.beginFill(0x1a1a1a, 1); // Lighter background, fully opaque
             albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
@@ -1856,6 +1951,7 @@
             albumButton.scale.set(1.02); // Slight scale up for emphasis
         });
         albumButton.on("pointerout", () => {
+            isAlbumButtonHovered = false;
             albumBtnBg.clear();
             albumBtnBg.beginFill(0x000000, 1); // Back to opaque black
             albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
@@ -1869,54 +1965,7 @@
             window.open("https://github.com/ArinzeGit", "_blank");
         });
 
-        // Play Again button (right)
-        const playAgainContainer = new PIXI.Container();
-        playAgainContainer.x = 370; // More spacing from center
-        
-        const playBtnBg = new PIXI.Graphics();
-        const playBtnWidth = 200;
-        const playBtnHeight = 40;
-        playBtnBg.beginFill(0x00ff66, 0.3);
-        playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-        playBtnBg.endFill();
-        playBtnBg.lineStyle(2, 0x00ff66, 1);
-        playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-        playAgainContainer.addChild(playBtnBg);
-
-        const playAgain = new PIXI.Text("▶ Play Again", {
-            fill: "#00ff66",
-            fontSize: 20,
-            fontWeight: "bold",
-            fontFamily: "Orbitron"
-        });
-        playAgain.anchor.set(0.5);
-        playAgainContainer.addChild(playAgain);
-
-        playAgainContainer.interactive = true;
-        playAgainContainer.buttonMode = true;
-        playAgainContainer.cursor = "pointer";
-        playAgainContainer.on("pointerover", () => {
-            playBtnBg.clear();
-            playBtnBg.beginFill(0x00ff66, 0.4);
-            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-            playBtnBg.endFill();
-            playBtnBg.lineStyle(3, 0x00ff66, 1);
-            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-            playAgain.style.fill = "#ffff66";
-        });
-        playAgainContainer.on("pointerout", () => {
-            playBtnBg.clear();
-            playBtnBg.beginFill(0x00ff66, 0.3);
-            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-            playBtnBg.endFill();
-            playBtnBg.lineStyle(2, 0x00ff66, 1);
-            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-            playAgain.style.fill = "#00ff66";
-        });
-        playAgainContainer.on("pointerdown", resetGame);
-
-        buttonsContainer.addChild(backToMenuContainer, albumButton, playAgainContainer);
-        bottomContainer.addChild(buttonsContainer);
+        gameOverScene.addChild(albumButton);
     }
 
     // Reset game state
@@ -1969,7 +2018,9 @@
 
         // Reset collected letters (set all back to gray)
         letterTexts.forEach(letter => {
-            letter.style.fill = "#555"; 
+            letter.style.fill = "#555";
+            letter.style.stroke = "#000000";
+            letter.style.strokeThickness = 0;
         });
 
         cleanUnsavedEntries();
