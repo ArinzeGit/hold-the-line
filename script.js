@@ -39,15 +39,10 @@
     view.style.display = "block"; // removes inline gaps if parent uses inline-block
     document.getElementById("game-container").appendChild(view);
 
-    // Store initial viewport height to prevent issues with dynamic address bars/keyboards
-    let initialViewportHeight = window.innerHeight;
-    
-    // Resize function (used for both loading and game)
+    // Simple resize function: scales to fill screen while maintaining aspect ratio
     function resize() {
-        // Use the larger of initial height or current innerHeight to prevent cropping
-        // This handles Safari's address bar and Chrome's keyboard
-        const viewportHeight = Math.max(initialViewportHeight, window.innerHeight);
         const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
         
         const scaleX = viewportWidth / GAME_WIDTH;
         const scaleY = viewportHeight / GAME_HEIGHT;
@@ -58,51 +53,19 @@
 
         app.renderer.resize(newWidth, newHeight);
 
-        // Center using the actual window dimensions (not the stored height)
-        view.style.left = `${(window.innerWidth - newWidth) / 2}px`;
-        view.style.top = `${(window.innerHeight - newHeight) / 2}px`;
+        // Center the canvas
+        view.style.left = `${(viewportWidth - newWidth) / 2}px`;
+        view.style.top = `${(viewportHeight - newHeight) / 2}px`;
 
         app.stage.scale.set(scale);
-    }
-
-    // Debounce resize to handle rapid viewport changes
-    let resizeTimeout = null;
-    function debouncedResize() {
-        if (resizeTimeout) {
-            clearTimeout(resizeTimeout);
-        }
-        resizeTimeout = setTimeout(() => {
-            resize();
-            resizeTimeout = null;
-        }, 150);
     }
 
     // Initial resize
     resize();
     
-    // Update initial height after a delay to capture stable viewport (Safari)
-    setTimeout(() => {
-        initialViewportHeight = Math.max(initialViewportHeight, window.innerHeight);
-        resize();
-    }, 500);
-    
-    window.addEventListener("resize", debouncedResize);
-    window.addEventListener("orientationchange", () => {
-        // Reset initial height on orientation change
-        setTimeout(() => {
-            initialViewportHeight = window.innerHeight;
-            resize();
-        }, 100);
-    });
-    
-    // Handle keyboard show/hide - update initial height when keyboard closes
-    let keyboardClosedHeight = null;
-    window.addEventListener("resize", () => {
-        // If viewport height increases, keyboard likely closed
-        if (window.innerHeight > initialViewportHeight) {
-            initialViewportHeight = window.innerHeight;
-        }
-    });
+    // Listen for resize and orientation changes
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", resize);
 
     // Create loading scene
     const loadingScene = new PIXI.Container();
