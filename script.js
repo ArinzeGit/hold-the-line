@@ -248,6 +248,7 @@
     let backgroundMusicTimeout = null; // Track delayed background music timeout
     let musicEnabled = false; // Track if user has enabled music
     let musicButtonContainer = null; // Music enable button container
+    let animateMusicButtonTicker = null; // Reference to music button animation ticker
 
      // Arrays
     const projectiles = [];
@@ -526,7 +527,7 @@
         // Animate the pointing finger and button pulse (bounce/pulse effect)
         let fingerOffset = 0;
         let isMusicButtonHovered = false;
-        app.ticker.add(() => {
+        animateMusicButtonTicker = () => {
             if (pointingFinger && musicButtonContainer && musicButtonContainer.visible && !isMusicButtonHovered) {
                 fingerOffset += 0.1;
                 // Bounce the finger
@@ -535,7 +536,8 @@
                 const pulseScale = 1 + Math.sin(fingerOffset) * 0.03; // Very subtle pulse (3%)
                 musicButtonContainer.scale.set(pulseScale);
             }
-        });
+        };
+        app.ticker.add(animateMusicButtonTicker);
 
         const musicBtnBg = new PIXI.Graphics();
         let musicBtnWidth = 270;
@@ -602,12 +604,15 @@
                     musicBtnHeight = 60;
                     redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2, 0xffff00, 0.8);
                     
-                    // Show warning message for a moment, then hide button
+                    // Show warning message for a moment, then hide button and remove ticker
                     setTimeout(() => {
                         if (musicButtonContainer && musicButtonContainer.parent) {
                             musicButtonContainer.visible = false;
+                            if (animateMusicButtonTicker) {
+                                app.ticker.remove(animateMusicButtonTicker); // Stop animation ticker
+                            }
                         }
-                    }, 2000);
+                    }, 2500);
                 }, 1000); // Show warning after 1 second
             }
         });
@@ -2008,6 +2013,11 @@
         if (musicButtonContainer) {
             musicButtonContainer.visible = false;
             musicEnabled = true;
+            // Remove animation ticker if it exists
+            if (animateMusicButtonTicker) {
+                app.ticker.remove(animateMusicButtonTicker);
+                animateMusicButtonTicker = null;
+            }
         }
         
         // Reset controls in case endgame destroyed buttons abruptly on mobile
