@@ -538,23 +538,23 @@
         });
 
         const musicBtnBg = new PIXI.Graphics();
-        let musicBtnWidth = 200; // Wider to accommodate "Music Enabled" text
-        const musicBtnHeight = 40;
+        let musicBtnWidth = 270;
+        let musicBtnHeight = 40;
         
         // Helper function to redraw button background with given width and style
-        const redrawButtonBg = (width, fill, borderThickness, borderColor, borderAlpha) => {
+        const redrawButtonBg = (width, height, fill, borderThickness, borderColor, borderAlpha) => {
             musicBtnBg.clear();
             musicBtnBg.beginFill(fill, 1);
-            musicBtnBg.drawRoundedRect(-width/2, -musicBtnHeight/2, width, musicBtnHeight, 10);
+            musicBtnBg.drawRoundedRect(-width/2, -height/2, width, height, 10);
             musicBtnBg.endFill();
             musicBtnBg.lineStyle(borderThickness, borderColor, borderAlpha);
-            musicBtnBg.drawRoundedRect(-width/2, -musicBtnHeight/2, width, musicBtnHeight, 10);
+            musicBtnBg.drawRoundedRect(-width/2, -height/2, width, height, 10);
         };
         
-        redrawButtonBg(musicBtnWidth, 0x000000, 2, 0xffff00, 0.8);
+        redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2, 0xffff00, 0.8);
         musicButtonContainer.addChild(musicBtnBg);
 
-        const musicButtonText = new PIXI.Text("🔊 Enable Music", {
+        const musicButtonText = new PIXI.Text("🎵 Tap to enable music", {
             fill: "#ffff00",
             fontSize: 18,
             fontWeight: "600",
@@ -571,14 +571,14 @@
         
         musicButtonContainer.on("pointerover", () => {
             isMusicButtonHovered = true;
-            redrawButtonBg(musicBtnWidth, 0x1a1a1a, 3, 0xffff00, 1);
+            redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x1a1a1a, 3, 0xffff00, 1);
             musicButtonText.style.fill = "#ffff99";
             musicButtonContainer.scale.set(1.0); // Reset scale on hover
         });
         
         musicButtonContainer.on("pointerout", () => {
             isMusicButtonHovered = false;
-            redrawButtonBg(musicBtnWidth, 0x000000, 2, 0xffff00, 0.8);
+            redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2, 0xffff00, 0.8);
             musicButtonText.style.fill = "#ffff00";
             // Scale will be controlled by pulse animation, not reset to 1.0
         });
@@ -587,16 +587,20 @@
             if (!musicEnabled) {
                 backgroundMusic.play();
                 musicEnabled = true;
-                musicButtonText.text = "🔊 Music Enabled";
+                musicButtonText.text = "🎵 Music Enabled";
+                musicBtnWidth = 205;
+                redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2, 0xffff00, 0.8);
                 
                 // Show warning about silent mode after brief delay
                 setTimeout(() => {
-                    musicButtonText.text = "🔇 Turn Off Silent Mode";
+                    musicButtonText.text = "🔇 If you don't hear music,\nturn off silent mode";
+                    musicButtonText.style.align = "center";
                     musicButtonText.style.fill = "#ffaa00"; // Orange warning color
                     
                     // Increase button width to accommodate longer text
-                    musicBtnWidth = 280;
-                    redrawButtonBg(musicBtnWidth, 0x000000, 2, 0xffff00, 0.8);
+                    musicBtnWidth = 310;
+                    musicBtnHeight = 60;
+                    redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2, 0xffff00, 0.8);
                     
                     // Show warning message for a moment, then hide button
                     setTimeout(() => {
