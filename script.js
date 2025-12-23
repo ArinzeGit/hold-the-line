@@ -822,16 +822,107 @@
     
     uiContainer.addChild(timerCard);
 
+    // Mobile control visual feedback
+    // Joystick indicator (left side)
+    const joystickContainer = new PIXI.Container();
+    joystickContainer.visible = false;
+    const joystickBase = new PIXI.Graphics();
+    const joystickRadius = 70; // Increased size
+    joystickBase.beginFill(0x000000, 0.6);
+    joystickBase.drawCircle(0, 0, joystickRadius);
+    joystickBase.endFill();
+    joystickBase.lineStyle(3, 0x00ff66, 0.8); // Thicker border to match larger size
+    joystickBase.drawCircle(0, 0, joystickRadius);
+    joystickContainer.addChild(joystickBase);
+    
+    // Joystick indicator (arrow/pointer)
+    const joystickIndicator = new PIXI.Graphics();
+    joystickContainer.addChild(joystickIndicator);
+    
+    // Function to update joystick visual state (neutral, left, right)
+    function updateJoystickState(state) {
+        joystickIndicator.clear();
+        
+        if (state === 'right') {
+            // Draw right arrow (filled) - scaled up for larger joystick
+            joystickIndicator.beginFill(0x00ff66, 1);
+            joystickIndicator.moveTo(20, 0);
+            joystickIndicator.lineTo(-12, -20);
+            joystickIndicator.lineTo(-12, 20);
+            joystickIndicator.lineTo(20, 0);
+            joystickIndicator.endFill();
+        } else if (state === 'left') {
+            // Draw left arrow (filled) - scaled up for larger joystick
+            joystickIndicator.beginFill(0x00ff66, 1);
+            joystickIndicator.moveTo(-20, 0);
+            joystickIndicator.lineTo(12, -20);
+            joystickIndicator.lineTo(12, 20);
+            joystickIndicator.lineTo(-20, 0);
+            joystickIndicator.endFill();
+        } else {
+            // Neutral state - draw center circle (scaled up)
+            joystickIndicator.beginFill(0x00ff66, 0.6);
+            joystickIndicator.drawCircle(0, 0, 16);
+            joystickIndicator.endFill();
+        }
+    }
+    
+    // Position joystick centered in left half of screen
+    joystickContainer.x = GAME_WIDTH / 4; // Center of left half (0 to GAME_WIDTH/2)
+    joystickContainer.y = GAME_HEIGHT / 2; // Center vertically
+    uiContainer.addChild(joystickContainer);
+    
+    // Shoot flash effect (right side)
+    const shootFlashContainer = new PIXI.Container();
+    shootFlashContainer.visible = false;
+    const shootFlashBg = new PIXI.Graphics();
+    shootFlashContainer.addChild(shootFlashBg);
+    uiContainer.addChild(shootFlashContainer);
+    
+    // Function to show shoot flash
+    function showShootFlash() {
+        shootFlashContainer.visible = true;
+        
+        // Redraw with bright flash
+        shootFlashBg.clear();
+        shootFlashBg.beginFill(0x00ff66, 0.7); // Much brighter initial flash
+        shootFlashBg.drawRect(GAME_WIDTH / 2, 0, GAME_WIDTH / 2, GAME_HEIGHT);
+        shootFlashBg.endFill();
+        shootFlashBg.lineStyle(6, 0x00ff66, 1); // Thicker, fully opaque border
+        shootFlashBg.drawRect(GAME_WIDTH / 2, 0, GAME_WIDTH / 2, GAME_HEIGHT);
+        
+        shootFlashBg.alpha = 1.0; // Start fully visible
+        
+        // Fade out quickly but more noticeably
+        const fadeOut = () => {
+            if (shootFlashContainer.visible) {
+                shootFlashBg.alpha -= 0.2; // Faster fade for more impact
+                if (shootFlashBg.alpha <= 0) {
+                    shootFlashContainer.visible = false;
+                    app.ticker.remove(fadeOut);
+                }
+            }
+        };
+        app.ticker.add(fadeOut);
+    }
+
     // Controls
     const keys = {};
-    window.addEventListener("keydown", e => keys[e.code] = true);
-    window.addEventListener("keyup", e => keys[e.code] = false);
+    window.addEventListener("keydown", e => {
+        keys[e.code] = true;
+        isTouchInput = false; // Mark as keyboard input
+    });
+    window.addEventListener("keyup", e => {
+        keys[e.code] = false;
+        isTouchInput = false; // Mark as keyboard input
+    });
 
     //  FULLSCREEN TOUCH CONTROLS (DOM OVERLAY + PIXI)
 
     // Tracking movement finger
     let movementTouchId = null;
     let lastTouchX = null;
+    let isTouchInput = false; // Track if current input is from touch
 
     function enableOverlay() {
         overlay.style.pointerEvents = "auto";
@@ -868,6 +959,7 @@
     // TOUCH START
     function onDomTouchStart(e) {
         const id = e.pointerId;
+        isTouchInput = true; // Mark that this is touch input
 
         // Convert to PIXI stage coordinates
         const localX = screenToLocalX(e.clientX, e.clientY);
@@ -877,9 +969,14 @@
             // LEFT SIDE → movement
             movementTouchId = id;
             lastTouchX = localX;
+            // Show joystick at fixed position
+            joystickContainer.visible = true;
+            updateJoystickState('neutral');
         } else {
             // RIGHT SIDE → shoot
             shootProjectile();
+            // Show shoot flash effect
+            showShootFlash();
         }
     }
 
@@ -896,9 +993,11 @@
         if (dx > 0) {
             keys["ArrowRight"] = true;
             keys["ArrowLeft"] = false;
+            updateJoystickState('right');
         } else {
             keys["ArrowLeft"] = true;
             keys["ArrowRight"] = false;
+            updateJoystickState('left');
         }
 
         lastTouchX = x;
@@ -913,6 +1012,8 @@
             keys["ArrowRight"] = false;
             movementTouchId = null;
             lastTouchX = null;
+            // Hide joystick when touch ends
+            joystickContainer.visible = false;
         }
     }
 
@@ -1589,6 +1690,12 @@
         gameOverScene.visible = true;
         disableOverlay();
         
+        // Hide mobile control visuals when game ends
+        joystickContainer.visible = false;
+        shootFlashContainer.visible = false;
+        movementTouchId = null;
+        lastTouchX = null;
+        
         // Clean up any existing input modal
         if (inputModalContainer) {
             gameOverScene.removeChild(inputModalContainer);
@@ -2024,6 +2131,13 @@
         keys["ArrowLeft"] = false;
         keys["ArrowRight"] = false;
         keys["Space"] = false;
+        
+        // Reset touch state and hide mobile control visuals
+        movementTouchId = null;
+        lastTouchX = null;
+        isTouchInput = false;
+        joystickContainer.visible = false;
+        shootFlashContainer.visible = false;
 
         startScene.visible = false;
         gameScene.visible = true;
