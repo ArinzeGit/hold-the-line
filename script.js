@@ -512,9 +512,8 @@
         
         musicButtonContainer = new PIXI.Container();
         // Position above album art (which is centered at x=150, y=GAME_HEIGHT/2, size 280)
-        const artSize = 280; // Album art size
         musicButtonContainer.x = albumArtContainer.x; // Align with album art
-        musicButtonContainer.y = albumArtContainer.y - artSize / 2 - 60; // Above album art
+        musicButtonContainer.y = albumArtContainer.y - albumArtSize / 2 - 60; // Above album art
         startContentContainer.addChild(musicButtonContainer);
         
         // Animated pointing finger (medium skin tone)
