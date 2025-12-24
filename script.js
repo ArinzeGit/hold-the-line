@@ -886,10 +886,10 @@
         // Redraw with bright flash
         shootFlashBg.clear();
         shootFlashBg.beginFill(0x00ff66, 0.7); // Much brighter initial flash
-        shootFlashBg.drawRect(GAME_WIDTH / 2, 0, GAME_WIDTH / 2, GAME_HEIGHT);
+        shootFlashBg.drawRect(GAME_WIDTH / 2, 7*GAME_HEIGHT/8, GAME_WIDTH / 2, GAME_HEIGHT/8);
         shootFlashBg.endFill();
         shootFlashBg.lineStyle(6, 0x00ff66, 1); // Thicker, fully opaque border
-        shootFlashBg.drawRect(GAME_WIDTH / 2, 0, GAME_WIDTH / 2, GAME_HEIGHT);
+        shootFlashBg.drawRect(GAME_WIDTH / 2, 7*GAME_HEIGHT/8, GAME_WIDTH / 2, GAME_HEIGHT/8);
         
         shootFlashBg.alpha = 1.0; // Start fully visible
         
