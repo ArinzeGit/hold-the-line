@@ -651,7 +651,7 @@
 
     // Album link background (wider to fit text)
     const albumLinkBg = new PIXI.Graphics();
-    const buttonWidth = 420;
+    const buttonWidth = 350;
     const buttonHeight = 40;
     const buttonRadius = 10;
     albumLinkBg.beginFill(0x000000, 1);
@@ -661,7 +661,7 @@
     albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
     albumLinkContainer.addChild(albumLinkBg);
 
-    const albumLinkText = new PIXI.Text("🎵 Get the SOLDIER Album", {
+    const albumLinkText = new PIXI.Text("🎵 Get the SOLDIER EP", {
         fill: "#ffff00",
         fontSize: 22,
         fontWeight: "700",
@@ -693,7 +693,7 @@
         albumLinkText.style.fill = "#ffff00"; // Normal text color
     });
     albumLinkContainer.on("pointerdown", () => {
-        window.open("https://github.com/ArinzeGit", "_blank");
+        window.open("http://hevyhub.com/Manfred-Killer", "_blank");
     });
 
     // Add subtle glow animation to title (yellow theme to match album)
@@ -2034,7 +2034,7 @@
         albumButton.y = mainContentContainer.y + leaderboardCard.y + cardHeight/2 + 85;
         
         const albumBtnBg = new PIXI.Graphics();
-        const albumBtnWidth = 460; // Wider to prevent text overflow
+        const albumBtnWidth = 400; // Wider to prevent text overflow
         const albumBtnHeight = 90; // Increased height to accommodate art
         
         // Helper function to redraw album button background
@@ -2073,7 +2073,7 @@
         albumButton.addChild(albumArtThumb);
 
         // Album button text (right side of art)
-        const albumBtnText = new PIXI.Text("🎵 Get the SOLDIER Album", {
+        const albumBtnText = new PIXI.Text("🎵 Get the SOLDIER EP", {
             fill: "#ffff00",
             fontSize: 22,
             fontWeight: "bold",
@@ -2151,7 +2151,7 @@
             albumButton.scale.set(1.0); // Reset scale
         });
         albumButton.on("pointerdown", () => {
-            window.open("https://github.com/ArinzeGit", "_blank");
+            window.open("http://hevyhub.com/Manfred-Killer", "_blank");
         });
 
         gameOverScene.addChild(albumButton);
