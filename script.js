@@ -534,6 +534,29 @@
                 // Pulse the button scale (same frequency as finger)
                 const pulseScale = 1 + Math.sin(fingerOffset) * 0.03; // Very subtle pulse (3%)
                 musicButtonContainer.scale.set(pulseScale);
+                
+                // Interpolate between normal and hover states using sine wave
+                // Map sin from [-1, 1] to [0, 1] for interpolation
+                const t = (Math.sin(fingerOffset) + 1) / 2; // t ranges from 0 to 1
+                
+                // Interpolate text color: #ffff00 (normal) to #ffff99 (hover)
+                const normalTextR = 255, normalTextG = 255, normalTextB = 0;
+                const hoverTextR = 255, hoverTextG = 255, hoverTextB = 153;
+                const textR = Math.floor(normalTextR + (hoverTextR - normalTextR) * t);
+                const textG = Math.floor(normalTextG + (hoverTextG - normalTextG) * t);
+                const textB = Math.floor(normalTextB + (hoverTextB - normalTextB) * t);
+                musicButtonText.style.fill = `#${textR.toString(16).padStart(2, '0')}${textG.toString(16).padStart(2, '0')}${textB.toString(16).padStart(2, '0')}`;
+                
+                // Interpolate background: 0x000000 (normal) to 0x1a1a1a (hover)
+                const normalBg = 0x000000;
+                const hoverBg = 0x1a1a1a;
+                const bgR = Math.floor((normalBg >> 16) + ((hoverBg >> 16) - (normalBg >> 16)) * t);
+                const bgG = Math.floor(((normalBg >> 8) & 0xFF) + (((hoverBg >> 8) & 0xFF) - ((normalBg >> 8) & 0xFF)) * t);
+                const bgB = Math.floor((normalBg & 0xFF) + ((hoverBg & 0xFF) - (normalBg & 0xFF)) * t);
+                const interpolatedBg = (bgR << 16) | (bgG << 8) | bgB;
+                
+                // Redraw button with interpolated values
+                redrawButtonBg(musicBtnWidth, musicBtnHeight, interpolatedBg, 2);
             }
         };
         app.ticker.add(animateMusicButtonTicker);
@@ -543,16 +566,16 @@
         let musicBtnHeight = 40;
         
         // Helper function to redraw button background with given width and style
-        const redrawButtonBg = (width, height, fill, borderThickness, borderColor, borderAlpha) => {
+        const redrawButtonBg = (width, height, fill, borderThickness) => {
             musicBtnBg.clear();
             musicBtnBg.beginFill(fill, 1);
             musicBtnBg.drawRoundedRect(-width/2, -height/2, width, height, 10);
             musicBtnBg.endFill();
-            musicBtnBg.lineStyle(borderThickness, borderColor, borderAlpha);
+            musicBtnBg.lineStyle(borderThickness, 0xffff00, 1);
             musicBtnBg.drawRoundedRect(-width/2, -height/2, width, height, 10);
         };
         
-        redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2, 0xffff00, 0.8);
+        redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2);
         musicButtonContainer.addChild(musicBtnBg);
 
         const musicButtonText = new PIXI.Text("🎵 Tap to enable music", {
@@ -572,14 +595,14 @@
         
         musicButtonContainer.on("pointerover", () => {
             isMusicButtonHovered = true;
-            redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x1a1a1a, 3, 0xffff00, 1);
+            redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x1a1a1a, 3);
             musicButtonText.style.fill = "#ffff99";
             musicButtonContainer.scale.set(1.0); // Reset scale on hover
         });
         
         musicButtonContainer.on("pointerout", () => {
             isMusicButtonHovered = false;
-            redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2, 0xffff00, 0.8);
+            redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2);
             musicButtonText.style.fill = "#ffff00";
             // Scale will be controlled by pulse animation, not reset to 1.0
         });
@@ -590,7 +613,7 @@
                 musicEnabled = true;
                 musicButtonText.text = "🎵 Music Enabled";
                 musicBtnWidth = 205;
-                redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2, 0xffff00, 0.8);
+                redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2);
                 
                 // Show warning about silent mode after brief delay
                 setTimeout(() => {
@@ -601,7 +624,7 @@
                     // Increase button width to accommodate longer text
                     musicBtnWidth = 310;
                     musicBtnHeight = 60;
-                    redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2, 0xffff00, 0.8);
+                    redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2);
                     
                     // Show warning message for a moment, then hide button and remove ticker
                     setTimeout(() => {
@@ -2013,11 +2036,19 @@
         const albumBtnBg = new PIXI.Graphics();
         const albumBtnWidth = 460; // Wider to prevent text overflow
         const albumBtnHeight = 90; // Increased height to accommodate art
-        albumBtnBg.beginFill(0x000000, 1); // Fully opaque
-        albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
-        albumBtnBg.endFill();
-        albumBtnBg.lineStyle(2, 0xffff00, 1);
-        albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
+        
+        // Helper function to redraw album button background
+        const redrawAlbumButtonBg = (fill, borderThickness) => {
+            albumBtnBg.clear();
+            albumBtnBg.beginFill(fill, 1);
+            albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
+            albumBtnBg.endFill();
+            albumBtnBg.lineStyle(borderThickness, 0xffff00, 1);
+            albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
+        };
+        
+        // Initial button state
+        redrawAlbumButtonBg(0x000000, 2);
         albumButton.addChild(albumBtnBg);
 
         // Album art thumbnail (inside button, left side)
@@ -2071,6 +2102,29 @@
                 // Pulse the button scale (same frequency as finger)
                 const pulseScale = 1 + Math.sin(albumFingerOffset) * 0.03; // Very subtle pulse (3%)
                 albumButton.scale.set(pulseScale);
+                
+                // Interpolate between normal and hover states using sine wave
+                // Map sin from [-1, 1] to [0, 1] for interpolation
+                const t = (Math.sin(albumFingerOffset) + 1) / 2; // t ranges from 0 to 1
+                
+                // Interpolate text color: #ffff00 (normal) to #ffff99 (hover)
+                const normalTextR = 255, normalTextG = 255, normalTextB = 0;
+                const hoverTextR = 255, hoverTextG = 255, hoverTextB = 153;
+                const textR = Math.floor(normalTextR + (hoverTextR - normalTextR) * t);
+                const textG = Math.floor(normalTextG + (hoverTextG - normalTextG) * t);
+                const textB = Math.floor(normalTextB + (hoverTextB - normalTextB) * t);
+                albumBtnText.style.fill = `#${textR.toString(16).padStart(2, '0')}${textG.toString(16).padStart(2, '0')}${textB.toString(16).padStart(2, '0')}`;
+                
+                // Interpolate background: 0x000000 (normal) to 0x1a1a1a (hover)
+                const normalBg = 0x000000;
+                const hoverBg = 0x1a1a1a;
+                const bgR = Math.floor((normalBg >> 16) + ((hoverBg >> 16) - (normalBg >> 16)) * t);
+                const bgG = Math.floor(((normalBg >> 8) & 0xFF) + (((hoverBg >> 8) & 0xFF) - ((normalBg >> 8) & 0xFF)) * t);
+                const bgB = Math.floor((normalBg & 0xFF) + ((hoverBg & 0xFF) - (normalBg & 0xFF)) * t);
+                const interpolatedBg = (bgR << 16) | (bgG << 8) | bgB;
+                
+                // Redraw button with interpolated values (border stays static)
+                redrawAlbumButtonBg(interpolatedBg, 2);
             }
         };
         app.ticker.add(animateAlbumFinger);
@@ -2086,23 +2140,13 @@
         
         albumButton.on("pointerover", () => {
             isAlbumButtonHovered = true;
-            albumBtnBg.clear();
-            albumBtnBg.beginFill(0x1a1a1a, 1); // Lighter background, fully opaque
-            albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
-            albumBtnBg.endFill();
-            albumBtnBg.lineStyle(3, 0xffff00, 1); // Thicker, brighter border
-            albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
+            redrawAlbumButtonBg(0x1a1a1a, 3);
             albumBtnText.style.fill = "#ffff99"; // Brighter text
             albumButton.scale.set(1.02); // Slight scale up for emphasis
         });
         albumButton.on("pointerout", () => {
             isAlbumButtonHovered = false;
-            albumBtnBg.clear();
-            albumBtnBg.beginFill(0x000000, 1); // Back to opaque black
-            albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
-            albumBtnBg.endFill();
-            albumBtnBg.lineStyle(2, 0xffff00, 1); // Normal border
-            albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
+            redrawAlbumButtonBg(0x000000, 2);
             albumBtnText.style.fill = "#ffff00"; // Normal text color
             albumButton.scale.set(1.0); // Reset scale
         });
