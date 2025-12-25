@@ -845,98 +845,101 @@
     uiContainer.addChild(timerCard);
 
     // Mobile control visual feedback
-    // Joystick indicator (left side) - Gamepad-style design
+    // Joystick indicator (left side)
     const joystickContainer = new PIXI.Container();
     joystickContainer.visible = false;
-    
-    // Subtle base circle (more contextual, less prominent)
+
+    // ---- Base (subtle, contextual) ----
     const joystickBase = new PIXI.Graphics();
     const joystickRadius = 65;
-    joystickBase.beginFill(0x000000, 0.3); // More transparent
+
+    joystickBase.beginFill(0x000000, 0.25);
     joystickBase.drawCircle(0, 0, joystickRadius);
     joystickBase.endFill();
-    joystickBase.lineStyle(2, 0x00ff66, 0.4); // Softer, more subtle border
+
+    joystickBase.lineStyle(2, 0x00ff66, 0.3);
     joystickBase.drawCircle(0, 0, joystickRadius);
+
     joystickContainer.addChild(joystickBase);
-    
-    // Glow effect container (for active states) - behind the stick
+
+    // ---- Soft glow (single layer) ----
     const joystickGlow = new PIXI.Graphics();
     joystickContainer.addChild(joystickGlow);
-    
-    // Inner stick (circular, gamepad-style)
+
+    // ---- Stick ----
     const joystickStick = new PIXI.Graphics();
-    const stickRadius = 22;
-    joystickStick.beginFill(0x00ff66, 1);
-    joystickStick.drawCircle(0, 0, stickRadius);
-    joystickStick.endFill();
-    // Add subtle inner highlight
-    joystickStick.beginFill(0x66ff99, 0.5);
-    joystickStick.drawCircle(-4, -4, stickRadius * 0.4);
-    joystickStick.endFill();
     joystickContainer.addChild(joystickStick);
-    
-    // Animation state tracking
-    let currentStickX = 0; // Current stick position (-1 to 1, normalized)
-    let targetStickX = 0; // Target position
-    let stickScale = 1.0; // Current scale
-    let targetScale = 1.0; // Target scale
-    let glowIntensity = 0; // Current glow intensity
-    let targetGlowIntensity = 0; // Target glow intensity
-    
-    // Animate joystick transitions smoothly
+
+    const baseRadius = 22;
+
+    // ---- Animation state ----
+    let currentStickX = 0;     // -1 → 1
+    let targetStickX = 0;
+
+    let glowIntensity = 0;
+    let targetGlowIntensity = 0;
+
+    let currentState = 'neutral';
+
+    // ---- Animation loop ----
     app.ticker.add(() => {
         if (!joystickContainer.visible) return;
-        
-        // Smooth easing for stick position (ease out)
-        const stickDiff = targetStickX - currentStickX;
-        currentStickX += stickDiff * 0.15; // Smooth interpolation
-        
-        // Smooth easing for scale
-        const scaleDiff = targetScale - stickScale;
-        stickScale += scaleDiff * 0.2;
-        
-        // Smooth easing for glow
-        const glowDiff = targetGlowIntensity - glowIntensity;
-        glowIntensity += glowDiff * 0.15;
-        
-        // Update stick position (max offset is 30% of base radius)
-        const maxOffset = joystickRadius * 0.3;
-        joystickStick.x = currentStickX * maxOffset;
-        
-        // Apply scale
-        joystickStick.scale.set(stickScale);
-        
-        // Update glow effect
+
+        // Smooth easing only (no snap physics)
+        currentStickX += (targetStickX - currentStickX) * 0.12;
+        glowIntensity += (targetGlowIntensity - glowIntensity) * 0.15;
+
+        // Stick position (40% of base radius)
+        const maxOffset = joystickRadius * 0.4;
+        const stickX = currentStickX * maxOffset;
+
+        // ---- Draw stick (2 layers only) ----
+        joystickStick.clear();
+
+        // Outer body (circle)
+        joystickStick.beginFill(0x00cc52, 0.7);
+        joystickStick.drawCircle(0, 0, baseRadius);
+        joystickStick.endFill();
+
+        // Inner core
+        joystickStick.beginFill(0x66ff99, 0.9);
+        joystickStick.drawCircle(0, 0, baseRadius * 0.45);
+        joystickStick.endFill();
+
+        joystickStick.x = stickX;
+
+        // ---- Glow (single soft directional hint) ----
         joystickGlow.clear();
         if (glowIntensity > 0.01) {
-            const glowRadius = stickRadius + glowIntensity * 8;
-            const glowAlpha = glowIntensity * 0.6;
-            joystickGlow.beginFill(0x00ff66, glowAlpha);
-            joystickGlow.drawCircle(joystickStick.x, 0, glowRadius);
+            joystickGlow.beginFill(0x00ff66, glowIntensity * 0.35);
+            joystickGlow.drawCircle(
+                stickX * 1.2,
+                0,
+                baseRadius * 1.9
+            );
             joystickGlow.endFill();
         }
     });
-    
-    // Function to update joystick visual state (neutral, left, right)
+
+    // ---- Public API (unchanged) ----
     function updateJoystickState(state) {
+        currentState = state;
+
         if (state === 'right') {
-            targetStickX = 1; // Move stick to the right
-            targetScale = 1.15; // Slightly larger when active
-            targetGlowIntensity = 1; // Full glow
+            targetStickX = 1;
+            targetGlowIntensity = 0.6;
         } else if (state === 'left') {
-            targetStickX = -1; // Move stick to the left
-            targetScale = 1.15; // Slightly larger when active
-            targetGlowIntensity = 1; // Full glow
+            targetStickX = -1;
+            targetGlowIntensity = 0.6;
         } else {
-            targetStickX = 0; // Return to center
-            targetScale = 1.0; // Normal size
-            targetGlowIntensity = 0; // No glow
+            targetStickX = 0;
+            targetGlowIntensity = 0;
         }
     }
-    
-    // Position joystick centered in left half of screen
-    joystickContainer.x = GAME_WIDTH / 4; // Center of left half (0 to GAME_WIDTH/2)
-    joystickContainer.y = GAME_HEIGHT / 2; // Center vertically
+
+    // ---- Positioning (unchanged) ----
+    joystickContainer.x = GAME_WIDTH / 4;
+    joystickContainer.y = GAME_HEIGHT / 2;
     uiContainer.addChild(joystickContainer);
     
     // Shoot flash effect (right side)
