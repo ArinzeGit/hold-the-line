@@ -845,47 +845,92 @@
     uiContainer.addChild(timerCard);
 
     // Mobile control visual feedback
-    // Joystick indicator (left side)
+    // Joystick indicator (left side) - Gamepad-style design
     const joystickContainer = new PIXI.Container();
     joystickContainer.visible = false;
+    
+    // Subtle base circle (more contextual, less prominent)
     const joystickBase = new PIXI.Graphics();
-    const joystickRadius = 70; // Increased size
-    joystickBase.beginFill(0x000000, 0.6);
+    const joystickRadius = 65;
+    joystickBase.beginFill(0x000000, 0.3); // More transparent
     joystickBase.drawCircle(0, 0, joystickRadius);
     joystickBase.endFill();
-    joystickBase.lineStyle(3, 0x00ff66, 0.8); // Thicker border to match larger size
+    joystickBase.lineStyle(2, 0x00ff66, 0.4); // Softer, more subtle border
     joystickBase.drawCircle(0, 0, joystickRadius);
     joystickContainer.addChild(joystickBase);
     
-    // Joystick indicator (arrow/pointer)
-    const joystickIndicator = new PIXI.Graphics();
-    joystickContainer.addChild(joystickIndicator);
+    // Glow effect container (for active states) - behind the stick
+    const joystickGlow = new PIXI.Graphics();
+    joystickContainer.addChild(joystickGlow);
+    
+    // Inner stick (circular, gamepad-style)
+    const joystickStick = new PIXI.Graphics();
+    const stickRadius = 22;
+    joystickStick.beginFill(0x00ff66, 1);
+    joystickStick.drawCircle(0, 0, stickRadius);
+    joystickStick.endFill();
+    // Add subtle inner highlight
+    joystickStick.beginFill(0x66ff99, 0.5);
+    joystickStick.drawCircle(-4, -4, stickRadius * 0.4);
+    joystickStick.endFill();
+    joystickContainer.addChild(joystickStick);
+    
+    // Animation state tracking
+    let currentStickX = 0; // Current stick position (-1 to 1, normalized)
+    let targetStickX = 0; // Target position
+    let stickScale = 1.0; // Current scale
+    let targetScale = 1.0; // Target scale
+    let glowIntensity = 0; // Current glow intensity
+    let targetGlowIntensity = 0; // Target glow intensity
+    
+    // Animate joystick transitions smoothly
+    app.ticker.add(() => {
+        if (!joystickContainer.visible) return;
+        
+        // Smooth easing for stick position (ease out)
+        const stickDiff = targetStickX - currentStickX;
+        currentStickX += stickDiff * 0.15; // Smooth interpolation
+        
+        // Smooth easing for scale
+        const scaleDiff = targetScale - stickScale;
+        stickScale += scaleDiff * 0.2;
+        
+        // Smooth easing for glow
+        const glowDiff = targetGlowIntensity - glowIntensity;
+        glowIntensity += glowDiff * 0.15;
+        
+        // Update stick position (max offset is 30% of base radius)
+        const maxOffset = joystickRadius * 0.3;
+        joystickStick.x = currentStickX * maxOffset;
+        
+        // Apply scale
+        joystickStick.scale.set(stickScale);
+        
+        // Update glow effect
+        joystickGlow.clear();
+        if (glowIntensity > 0.01) {
+            const glowRadius = stickRadius + glowIntensity * 8;
+            const glowAlpha = glowIntensity * 0.6;
+            joystickGlow.beginFill(0x00ff66, glowAlpha);
+            joystickGlow.drawCircle(joystickStick.x, 0, glowRadius);
+            joystickGlow.endFill();
+        }
+    });
     
     // Function to update joystick visual state (neutral, left, right)
     function updateJoystickState(state) {
-        joystickIndicator.clear();
-        
         if (state === 'right') {
-            // Draw right arrow (filled) - scaled up for larger joystick
-            joystickIndicator.beginFill(0x00ff66, 1);
-            joystickIndicator.moveTo(20, 0);
-            joystickIndicator.lineTo(-12, -20);
-            joystickIndicator.lineTo(-12, 20);
-            joystickIndicator.lineTo(20, 0);
-            joystickIndicator.endFill();
+            targetStickX = 1; // Move stick to the right
+            targetScale = 1.15; // Slightly larger when active
+            targetGlowIntensity = 1; // Full glow
         } else if (state === 'left') {
-            // Draw left arrow (filled) - scaled up for larger joystick
-            joystickIndicator.beginFill(0x00ff66, 1);
-            joystickIndicator.moveTo(-20, 0);
-            joystickIndicator.lineTo(12, -20);
-            joystickIndicator.lineTo(12, 20);
-            joystickIndicator.lineTo(-20, 0);
-            joystickIndicator.endFill();
+            targetStickX = -1; // Move stick to the left
+            targetScale = 1.15; // Slightly larger when active
+            targetGlowIntensity = 1; // Full glow
         } else {
-            // Neutral state - draw center circle (scaled up)
-            joystickIndicator.beginFill(0x00ff66, 0.6);
-            joystickIndicator.drawCircle(0, 0, 16);
-            joystickIndicator.endFill();
+            targetStickX = 0; // Return to center
+            targetScale = 1.0; // Normal size
+            targetGlowIntensity = 0; // No glow
         }
     }
     
