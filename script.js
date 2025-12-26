@@ -273,6 +273,159 @@
     gameOverScene.visible = false;
     disableOverlay();
 
+    // Mobile controls tutorial overlay (first play only)
+    const tutorialOverlay = new PIXI.Container();
+    tutorialOverlay.visible = false;
+    gameScene.addChild(tutorialOverlay);
+
+    // Semi-transparent background
+    const tutorialBg = new PIXI.Graphics();
+    tutorialBg.beginFill(0x000000, 0.7);
+    tutorialBg.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    tutorialBg.endFill();
+    tutorialOverlay.addChild(tutorialBg);
+
+    // Vertical divider line to separate left and right areas (dashed)
+    const divider = new PIXI.Graphics();
+    divider.lineStyle(3, 0x00ff66, 0.6);
+    const dashLength = 15;
+    const dashGap = 10;
+    const centerX = GAME_WIDTH / 2;
+    let y = 0;
+    while (y < GAME_HEIGHT) {
+        divider.moveTo(centerX, y);
+        divider.lineTo(centerX, Math.min(y + dashLength, GAME_HEIGHT));
+        y += dashLength + dashGap;
+    }
+    tutorialOverlay.addChild(divider);
+
+    // Left side tutorial (swipe to move)
+    const leftTutorial = new PIXI.Container();
+    leftTutorial.x = GAME_WIDTH / 4;
+    leftTutorial.y = GAME_HEIGHT / 2;
+    tutorialOverlay.addChild(leftTutorial);
+
+    // Animated swipe icon (left-right arrows)
+    const swipeIcon = new PIXI.Container();
+    let swipeOffset = 0;
+    const leftArrow = new PIXI.Graphics();
+    leftArrow.beginFill(0x00ff66, 1);
+    leftArrow.moveTo(-15, 0);
+    leftArrow.lineTo(-5, -10);
+    leftArrow.lineTo(-5, -5);
+    leftArrow.lineTo(5, -5);
+    leftArrow.lineTo(5, 5);
+    leftArrow.lineTo(-5, 5);
+    leftArrow.lineTo(-5, 10);
+    leftArrow.lineTo(-15, 0);
+    leftArrow.endFill();
+    swipeIcon.addChild(leftArrow);
+
+    const rightArrow = new PIXI.Graphics();
+    rightArrow.beginFill(0x00ff66, 1);
+    rightArrow.moveTo(15, 0);
+    rightArrow.lineTo(5, -10);
+    rightArrow.lineTo(5, -5);
+    rightArrow.lineTo(-5, -5);
+    rightArrow.lineTo(-5, 5);
+    rightArrow.lineTo(5, 5);
+    rightArrow.lineTo(5, 10);
+    rightArrow.lineTo(15, 0);
+    rightArrow.endFill();
+    swipeIcon.addChild(rightArrow);
+    swipeIcon.y = -40;
+    leftTutorial.addChild(swipeIcon);
+
+    // Swipe text
+    const swipeText = new PIXI.Text("Swipe this area to move", {
+        fill: "#00ff66",
+        fontSize: 18,
+        fontFamily: "Orbitron",
+        fontWeight: "600",
+        align: "center"
+    });
+    swipeText.anchor.set(0.5);
+    swipeText.y = 10;
+    leftTutorial.addChild(swipeText);
+
+    // Right side tutorial (tap to shoot)
+    const rightTutorial = new PIXI.Container();
+    rightTutorial.x = 3 * GAME_WIDTH / 4;
+    rightTutorial.y = GAME_HEIGHT / 2;
+    tutorialOverlay.addChild(rightTutorial);
+
+    // Animated tap icon (hand/finger pointing down)
+    const tapIcon = new PIXI.Text("👆", {
+        fontSize: 48
+    });
+    tapIcon.anchor.set(0.5);
+    tapIcon.y = -40;
+    rightTutorial.addChild(tapIcon);
+
+    // Tap text
+    const tapText = new PIXI.Text("Tap this area to shoot", {
+        fill: "#00ff66",
+        fontSize: 18,
+        fontFamily: "Orbitron",
+        fontWeight: "600",
+        align: "center"
+    });
+    tapText.anchor.set(0.5);
+    tapText.y = 10;
+    rightTutorial.addChild(tapText);
+
+    // Animate tutorial elements
+    app.ticker.add(() => {
+        if (!tutorialOverlay.visible) return;
+
+        // Animate swipe icon (left-right motion)
+        swipeOffset += 0.15;
+        swipeIcon.x = Math.sin(swipeOffset) * 8;
+
+        // Animate tap icon (bounce)
+        tapIcon.y = -40 + Math.sin(swipeOffset * 1.5) * 5;
+    });
+
+    // Function to show tutorial (first play only)
+    function showTutorial() {
+        const hasSeenTutorial = localStorage.getItem('holdTheLine_tutorialSeen');
+        if (!hasSeenTutorial) {
+            tutorialOverlay.visible = true;
+            tutorialOverlay.alpha = 0;
+            // Fade in
+            const fadeIn = () => {
+                tutorialOverlay.alpha += 0.05;
+                if (tutorialOverlay.alpha < 1) {
+                    requestAnimationFrame(fadeIn);
+                }
+            };
+            fadeIn();
+            // Auto-dismiss after 6 seconds
+            setTimeout(() => {
+                hideTutorial();
+            }, 6000);
+        }
+    }
+
+    // Function to hide tutorial
+    function hideTutorial() {
+        if (!tutorialOverlay.visible) return;
+        
+        // Mark as seen
+        localStorage.setItem('holdTheLine_tutorialSeen', 'true');
+        
+        // Fade out
+        const fadeOut = () => {
+            tutorialOverlay.alpha -= 0.05;
+            if (tutorialOverlay.alpha > 0) {
+                requestAnimationFrame(fadeOut);
+            } else {
+                tutorialOverlay.visible = false;
+            }
+        };
+        fadeOut();
+    }
+
     // Start Scene - create dynamic background
     // Dark background with subtle grid pattern (military tech look)
     const bgGraphics = new PIXI.Graphics();
@@ -2249,6 +2402,9 @@
         uiContainer.visible = true;
         gameOverScene.visible = false;
         enableOverlay();
+        
+        // Show tutorial on first play
+        showTutorial();
         // Clear the delayed background music timeout if it exists
         if (backgroundMusicTimeout) {
             clearTimeout(backgroundMusicTimeout);
