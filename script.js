@@ -880,6 +880,7 @@
     let targetGlowIntensity = 0;
 
     let currentState = 'neutral';
+    let shouldHideAfterNeutral = false;
 
     // ---- Animation loop ----
     app.ticker.add(() => {
@@ -888,6 +889,13 @@
         // Smooth easing only (no snap physics)
         currentStickX += (targetStickX - currentStickX) * 0.12;
         glowIntensity += (targetGlowIntensity - glowIntensity) * 0.15;
+
+        // Check if we should hide after returning to neutral
+        if (shouldHideAfterNeutral && Math.abs(currentStickX) < 0.05 && targetStickX === 0) {
+            joystickContainer.visible = false;
+            shouldHideAfterNeutral = false;
+            return;
+        }
 
         // Stick position (40% of base radius)
         const maxOffset = joystickRadius * 0.4;
@@ -1039,6 +1047,8 @@
             // LEFT SIDE → movement
             movementTouchId = id;
             lastTouchX = localX;
+            // Reset hide flag in case user touched again before previous hide completed
+            shouldHideAfterNeutral = false;
             // Show joystick at fixed position
             joystickContainer.visible = true;
             updateJoystickState('neutral');
@@ -1082,8 +1092,9 @@
             keys["ArrowRight"] = false;
             movementTouchId = null;
             lastTouchX = null;
-            // Hide joystick when touch ends
-            joystickContainer.visible = false;
+            // Return to neutral and hide after returning to center
+            updateJoystickState('neutral');
+            shouldHideAfterNeutral = true;
         }
     }
 
