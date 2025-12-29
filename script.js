@@ -2124,12 +2124,12 @@
                 // Call to action
                 ctx.fillStyle = '#00ff66';
                 ctx.font = '28px "Orbitron", sans-serif';
-                ctx.fillText('Play now and collect all letters!', titleX, titleY + 220);
+                ctx.fillText('Play now', titleX, titleY + 220);
                 
-                // Album promotion text
+                // Game link
                 ctx.fillStyle = '#ffff00';
-                ctx.font = '24px "Orbitron", sans-serif';
-                ctx.fillText('Get the SOLDIER EP', titleX, titleY + 280);
+                ctx.font = '22px "Orbitron", sans-serif';
+                ctx.fillText('https://hold-the-line-swart.vercel.app/', titleX, titleY + 270);
                 
                 resolve(shareCanvas.toDataURL('image/png'));
             };
