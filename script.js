@@ -299,91 +299,180 @@
     }
     tutorialOverlay.addChild(divider);
 
-    // Left side tutorial (swipe to move)
+    // Detect if desktop or mobile
+    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints;
+    const isDesktop = !isMobile;
+
+    // Left side tutorial
     const leftTutorial = new PIXI.Container();
     leftTutorial.x = GAME_WIDTH / 4;
     leftTutorial.y = GAME_HEIGHT / 2;
     tutorialOverlay.addChild(leftTutorial);
 
-    // Animated swipe icon (left-right arrows)
-    const swipeIcon = new PIXI.Container();
     let swipeOffset = 0;
-    const leftArrow = new PIXI.Graphics();
-    leftArrow.beginFill(0x00ff66, 1);
-    leftArrow.moveTo(-15, 0);
-    leftArrow.lineTo(-5, -10);
-    leftArrow.lineTo(-5, -5);
-    leftArrow.lineTo(5, -5);
-    leftArrow.lineTo(5, 5);
-    leftArrow.lineTo(-5, 5);
-    leftArrow.lineTo(-5, 10);
-    leftArrow.lineTo(-15, 0);
-    leftArrow.endFill();
-    swipeIcon.addChild(leftArrow);
+    let leftIcon, leftText;
 
-    const rightArrow = new PIXI.Graphics();
-    rightArrow.beginFill(0x00ff66, 1);
-    rightArrow.moveTo(15, 0);
-    rightArrow.lineTo(5, -10);
-    rightArrow.lineTo(5, -5);
-    rightArrow.lineTo(-5, -5);
-    rightArrow.lineTo(-5, 5);
-    rightArrow.lineTo(5, 5);
-    rightArrow.lineTo(5, 10);
-    rightArrow.lineTo(15, 0);
-    rightArrow.endFill();
-    swipeIcon.addChild(rightArrow);
-    swipeIcon.y = -40;
-    leftTutorial.addChild(swipeIcon);
+    if (isDesktop) {
+        // Desktop: Arrow keys icon
+        leftIcon = new PIXI.Container();
+        // Left arrow key
+        const leftKey = new PIXI.Graphics();
+        leftKey.lineStyle(2, 0x00ff66, 1);
+        leftKey.beginFill(0x00ff66, 0.2);
+        leftKey.drawRoundedRect(-25, -12, 20, 20, 3);
+        leftKey.endFill();
+        // Draw left arrow (pointing left - triangle)
+        leftKey.beginFill(0x00ff66, 1);
+        leftKey.moveTo(-20, 0);  // Tip (leftmost point)
+        leftKey.lineTo(-10, -7); // Top corner
+        leftKey.lineTo(-10, 7);  // Bottom corner
+        leftKey.lineTo(-20, 0);  // Back to tip
+        leftKey.endFill();
+        leftIcon.addChild(leftKey);
+        
+        // Right arrow key
+        const rightKey = new PIXI.Graphics();
+        rightKey.lineStyle(2, 0x00ff66, 1);
+        rightKey.beginFill(0x00ff66, 0.2);
+        rightKey.drawRoundedRect(5, -12, 20, 20, 3);
+        rightKey.endFill();
+        // Draw right arrow (pointing right - triangle)
+        rightKey.beginFill(0x00ff66, 1);
+        rightKey.moveTo(20, 0);  // Tip (rightmost point)
+        rightKey.lineTo(10, -7); // Top corner
+        rightKey.lineTo(10, 7);  // Bottom corner
+        rightKey.lineTo(20, 0);  // Back to tip
+        rightKey.endFill();
+        leftIcon.addChild(rightKey);
+        
+        leftIcon.y = -40;
+        leftTutorial.addChild(leftIcon);
 
-    // Swipe text
-    const swipeText = new PIXI.Text("Swipe this area to move", {
-        fill: "#00ff66",
-        fontSize: 18,
-        fontFamily: "Orbitron",
-        fontWeight: "600",
-        align: "center"
-    });
-    swipeText.anchor.set(0.5);
-    swipeText.y = 10;
-    leftTutorial.addChild(swipeText);
+        leftText = new PIXI.Text("Arrow keys to move", {
+            fill: "#00ff66",
+            fontSize: 18,
+            fontFamily: "Orbitron",
+            fontWeight: "600",
+            align: "center"
+        });
+    } else {
+        // Mobile: Animated swipe icon (left-right arrows)
+        leftIcon = new PIXI.Container();
+        const leftArrow = new PIXI.Graphics();
+        leftArrow.beginFill(0x00ff66, 1);
+        leftArrow.moveTo(-15, 0);
+        leftArrow.lineTo(-5, -10);
+        leftArrow.lineTo(-5, -5);
+        leftArrow.lineTo(5, -5);
+        leftArrow.lineTo(5, 5);
+        leftArrow.lineTo(-5, 5);
+        leftArrow.lineTo(-5, 10);
+        leftArrow.lineTo(-15, 0);
+        leftArrow.endFill();
+        leftIcon.addChild(leftArrow);
 
-    // Right side tutorial (tap to shoot)
+        const rightArrow = new PIXI.Graphics();
+        rightArrow.beginFill(0x00ff66, 1);
+        rightArrow.moveTo(15, 0);
+        rightArrow.lineTo(5, -10);
+        rightArrow.lineTo(5, -5);
+        rightArrow.lineTo(-5, -5);
+        rightArrow.lineTo(-5, 5);
+        rightArrow.lineTo(5, 5);
+        rightArrow.lineTo(5, 10);
+        rightArrow.lineTo(15, 0);
+        rightArrow.endFill();
+        leftIcon.addChild(rightArrow);
+        leftIcon.y = -40;
+        leftTutorial.addChild(leftIcon);
+
+        leftText = new PIXI.Text("Swipe this area to move", {
+            fill: "#00ff66",
+            fontSize: 18,
+            fontFamily: "Orbitron",
+            fontWeight: "600",
+            align: "center"
+        });
+    }
+    
+    leftText.anchor.set(0.5);
+    leftText.y = 10;
+    leftTutorial.addChild(leftText);
+
+    // Right side tutorial
     const rightTutorial = new PIXI.Container();
     rightTutorial.x = 3 * GAME_WIDTH / 4;
     rightTutorial.y = GAME_HEIGHT / 2;
     tutorialOverlay.addChild(rightTutorial);
 
-    // Animated tap icon (hand/finger pointing down)
-    const tapIcon = new PIXI.Text("👆", {
-        fontSize: 48
-    });
-    tapIcon.anchor.set(0.5);
-    tapIcon.y = -40;
-    rightTutorial.addChild(tapIcon);
+    let rightIcon, rightText;
 
-    // Tap text
-    const tapText = new PIXI.Text("Tap this area to shoot", {
-        fill: "#00ff66",
-        fontSize: 18,
-        fontFamily: "Orbitron",
-        fontWeight: "600",
-        align: "center"
-    });
-    tapText.anchor.set(0.5);
-    tapText.y = 10;
-    rightTutorial.addChild(tapText);
+    if (isDesktop) {
+        // Desktop: Space bar icon
+        rightIcon = new PIXI.Graphics();
+        rightIcon.lineStyle(2, 0x00ff66, 1);
+        rightIcon.beginFill(0x00ff66, 0.2);
+        rightIcon.drawRoundedRect(-40, -12, 80, 24, 3);
+        rightIcon.endFill();
+        rightIcon.lineStyle(2, 0x00ff66, 1);
+        const spaceText = new PIXI.Text("SPACE", {
+            fill: "#00ff66",
+            fontSize: 14,
+            fontFamily: "Orbitron",
+            fontWeight: "600"
+        });
+        spaceText.anchor.set(0.5);
+        rightIcon.addChild(spaceText);
+        rightIcon.y = -40;
+        rightTutorial.addChild(rightIcon);
+
+        rightText = new PIXI.Text("Space bar to shoot", {
+            fill: "#00ff66",
+            fontSize: 18,
+            fontFamily: "Orbitron",
+            fontWeight: "600",
+            align: "center"
+        });
+    } else {
+        // Mobile: Animated tap icon (hand/finger pointing down)
+        rightIcon = new PIXI.Text("👆", {
+            fontSize: 48
+        });
+        rightIcon.anchor.set(0.5);
+        rightIcon.y = -40;
+        rightTutorial.addChild(rightIcon);
+
+        rightText = new PIXI.Text("Tap this area to shoot", {
+            fill: "#00ff66",
+            fontSize: 18,
+            fontFamily: "Orbitron",
+            fontWeight: "600",
+            align: "center"
+        });
+    }
+    
+    rightText.anchor.set(0.5);
+    rightText.y = 10;
+    rightTutorial.addChild(rightText);
 
     // Animate tutorial elements
     app.ticker.add(() => {
         if (!tutorialOverlay.visible) return;
 
-        // Animate swipe icon (left-right motion)
         swipeOffset += 0.15;
-        swipeIcon.x = Math.sin(swipeOffset) * 8;
 
-        // Animate tap icon (bounce)
-        tapIcon.y = -40 + Math.sin(swipeOffset * 1.5) * 5;
+        if (isDesktop) {
+            // Desktop: Subtle pulse for arrow keys and space bar
+            const pulse = 1.0 + Math.sin(swipeOffset) * 0.1;
+            leftIcon.scale.set(pulse);
+            rightIcon.scale.set(pulse);
+        } else {
+            // Mobile: Animate swipe icon (left-right motion)
+            leftIcon.x = Math.sin(swipeOffset) * 8;
+
+            // Animate tap icon (bounce)
+            rightIcon.y = -40 + Math.sin(swipeOffset * 1.5) * 5;
+        }
     });
 
     // Function to show tutorial (first play only)
