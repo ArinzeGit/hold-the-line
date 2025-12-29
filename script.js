@@ -103,7 +103,8 @@
             'assets/enemy-sprites/anxiety-sprite.png',
             'assets/enemy-sprites/anger-sprite.png',
             'assets/enemy-sprites/despair-sprite.png',
-            'assets/enemy-sprites/guilt-sprite.png'
+            'assets/enemy-sprites/guilt-sprite.png',
+            'assets/x-twitter-icon.png'
         ];
 
         // Load textures using PIXI.Assets
@@ -178,6 +179,30 @@
     let backgroundMusic, shootSound, enemyDeathSound, gotCollectibleSound, 
         playerDeathSound, countdownSound, winSound, loseSound, 
         congratulationsSound, missionFailedSound, leaderboardApplauseSound;
+
+    // Parse URL parameters for deep linking
+    function parseUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        const shared = params.get('shared');
+        const sharedScore = params.get('score');
+        const sharedWin = params.get('win');
+        
+        if (shared === '1' && sharedScore !== null) {
+            // Clean URL to remove parameters after handling
+            const cleanUrl = window.location.origin + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+            
+            // Return shared link info (can be used to show a message or highlight score)
+            return {
+                isShared: true,
+                score: parseInt(sharedScore, 10),
+                win: sharedWin === '1'
+            };
+        }
+        return { isShared: false };
+    }
+    
+    parseUrlParams(); // The return value is for future use but we only call the function for its side effects
 
     // Load everything before starting
     try {
@@ -1997,6 +2022,146 @@
     }
 
     // End game
+    // Social Sharing Functions
+    // TODO: Integrate generateShareImage() for social sharing
+    // Currently unused, but kept for future share/download feature
+    function generateShareImage(win, score) {
+        // Create a temporary canvas for the shareable image
+        const shareCanvas = document.createElement('canvas');
+        const shareWidth = 1200;
+        const shareHeight = 630; // Optimal for social media (1.91:1 aspect ratio)
+        shareCanvas.width = shareWidth;
+        shareCanvas.height = shareHeight;
+        const ctx = shareCanvas.getContext('2d');
+        
+        // Dark background matching game theme
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, shareWidth, shareHeight);
+        
+        // Draw grid pattern (subtle)
+        ctx.strokeStyle = 'rgba(0, 255, 102, 0.15)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < shareWidth; x += 50) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, shareHeight);
+            ctx.stroke();
+        }
+        for (let y = 0; y < shareHeight; y += 50) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(shareWidth, y);
+            ctx.stroke();
+        }
+        
+        // Load album art image
+        const albumArtImg = new Image();
+        albumArtImg.crossOrigin = 'anonymous';
+        
+        return new Promise((resolve) => {
+            albumArtImg.onload = () => {
+                // Draw album art on left side (centered vertically)
+                const artSize = 350;
+                const artX = 100;
+                const artY = (shareHeight - artSize) / 2;
+                
+                // Helper function to draw rounded rectangle
+                const roundRect = (x, y, width, height, radius) => {
+                    ctx.beginPath();
+                    ctx.moveTo(x + radius, y);
+                    ctx.lineTo(x + width - radius, y);
+                    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                    ctx.lineTo(x + width, y + height - radius);
+                    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                    ctx.lineTo(x + radius, y + height);
+                    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                    ctx.lineTo(x, y + radius);
+                    ctx.quadraticCurveTo(x, y, x + radius, y);
+                    ctx.closePath();
+                };
+                
+                // Draw rounded rectangle background for art
+                ctx.fillStyle = '#000000';
+                roundRect(artX, artY, artSize, artSize, 20);
+                ctx.fill();
+                
+                // Draw album art
+                ctx.save();
+                roundRect(artX, artY, artSize, artSize, 20);
+                ctx.clip();
+                ctx.drawImage(albumArtImg, artX, artY, artSize, artSize);
+                ctx.restore();
+                
+                // Draw border around art
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 4;
+                roundRect(artX, artY, artSize, artSize, 20);
+                ctx.stroke();
+                
+                // Game title (with font fallback)
+                ctx.fillStyle = '#ffff00';
+                ctx.font = 'bold 48px "Orbitron", sans-serif';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                const titleX = artX + artSize + 60;
+                const titleY = artY + 40;
+                ctx.fillText('HOLD THE LINE', titleX, titleY);
+                
+                // Result text
+                ctx.fillStyle = win ? '#00ff66' : '#ff3333';
+                ctx.font = 'bold 36px "Orbitron", sans-serif';
+                const resultText = win ? 'Mission Complete!' : 'Mission Failed';
+                ctx.fillText(resultText, titleX, titleY + 70);
+                
+                // Score
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '32px "Orbitron", sans-serif';
+                ctx.fillText('Score:', titleX, titleY + 140);
+                ctx.fillStyle = '#00ff66';
+                ctx.font = 'bold 40px "Orbitron", sans-serif';
+                ctx.fillText(score.toString(), titleX + 140, titleY + 135);
+                
+                // Call to action
+                ctx.fillStyle = '#00ff66';
+                ctx.font = '28px "Orbitron", sans-serif';
+                ctx.fillText('Play now and collect all letters!', titleX, titleY + 220);
+                
+                // Album promotion text
+                ctx.fillStyle = '#ffff00';
+                ctx.font = '24px "Orbitron", sans-serif';
+                ctx.fillText('Get the SOLDIER EP', titleX, titleY + 280);
+                
+                resolve(shareCanvas.toDataURL('image/png'));
+            };
+            albumArtImg.src = 'assets/soldier-album-art.png';
+        });
+    }
+    
+    function getShareText(win, score) {
+        const result = win ? 'completed' : 'played';
+        const scoreText = win ? ` with a score of ${score}!` : ` and scored ${score} points!`;
+        return `I ${result} Hold the Line - SOLDIER${scoreText} Can you beat my score? 🎮🎵`;
+    }
+    
+    function getShareUrl(score = null, win = false) {
+        const baseUrl = window.location.origin + window.location.pathname;
+        const params = new URLSearchParams();
+        if (score !== null) {
+            params.set('score', score);
+            params.set('win', win ? '1' : '0');
+            params.set('shared', '1'); // Flag to indicate this is a shared link
+        }
+        const queryString = params.toString();
+        return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+    }
+    
+    function shareToTwitter(win, score) {
+        const text = getShareText(win, score);
+        const url = getShareUrl(score, win);
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+        window.open(twitterUrl, '_blank', 'width=550,height=420');
+    }
+
     function endGame(win) {
         isCountdownPlaying? (countdownSound.stop(),isCountdownPlaying = false) : null;
         win ? (setTimeout(() => {
@@ -2456,6 +2621,71 @@
         });
 
         gameOverScene.addChild(albumButton);
+
+        // Share button (below Play Again button)
+        const shareButton = new PIXI.Container();
+        shareButton.x = playAgainContainer.x; // Same x position as Play Again button
+        shareButton.y = leaderboardCard.y + cardHeight/4; // Below Play Again button
+        
+        const shareBtnBg = new PIXI.Graphics();
+        const shareBtnWidth = 190;
+        const shareBtnHeight = 30;
+        
+        const redrawShareButtonBg = (fill, borderThickness) => {
+            shareBtnBg.clear();
+            shareBtnBg.beginFill(fill, 0.75);
+            shareBtnBg.drawRoundedRect(-shareBtnWidth/2, -shareBtnHeight/2, shareBtnWidth, shareBtnHeight, 10);
+            shareBtnBg.endFill();
+            shareBtnBg.lineStyle(borderThickness, 0x00ff66, 1);
+            shareBtnBg.drawRoundedRect(-shareBtnWidth/2, -shareBtnHeight/2, shareBtnWidth, shareBtnHeight, 10);
+        };
+        
+        redrawShareButtonBg(0x000000, 2);
+        shareButton.addChild(shareBtnBg);
+        
+        // Container for icon + text to center them together
+        const shareButtonContent = new PIXI.Container();
+        shareButton.addChild(shareButtonContent);
+        
+        // X icon sprite
+        const xIconSprite = new PIXI.Sprite(PIXI.Assets.get('assets/x-twitter-icon.png'));
+        xIconSprite.anchor.set(0.5);
+        const iconSize = 24; // Size of the icon
+        xIconSprite.width = iconSize;
+        xIconSprite.height = iconSize;
+        xIconSprite.x = -75; // Position icon to the left
+        shareButtonContent.addChild(xIconSprite);
+        
+        // Text (positioned to the right of the icon)
+        const shareBtnText = new PIXI.Text("Share on X", {
+            fill: "#00ff66",
+            fontSize: 24,
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
+        });
+        shareBtnText.anchor.set(0, 0.5); // Anchor to left center
+        shareBtnText.x = xIconSprite.x + iconSize/2 + 3; // Position text next to icon
+        shareButtonContent.addChild(shareBtnText);
+        
+        shareButton.interactive = true;
+        shareButton.buttonMode = true;
+        shareButton.cursor = "pointer";
+        
+        shareButton.on("pointerover", () => {
+            redrawShareButtonBg(0x1a1a1a, 3);
+            shareBtnText.style.fill = "#ffff66";
+            shareButton.scale.set(1.02);
+        });
+        shareButton.on("pointerout", () => {
+            redrawShareButtonBg(0x000000, 2);
+            shareBtnText.style.fill = "#00ff66";
+            shareButton.scale.set(1.0);
+        });
+        shareButton.on("pointerdown", () => {
+            shareToTwitter(win, score);
+        });
+        
+        mainContentContainer.addChild(shareButton);
     }
 
     // Reset game state
