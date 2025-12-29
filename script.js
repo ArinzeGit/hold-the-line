@@ -2161,6 +2161,23 @@
         const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
         window.open(twitterUrl, '_blank', 'width=550,height=420');
     }
+    
+    async function downloadResultImage(win, score) {
+        try {
+            const imageDataUrl = await generateShareImage(win, score);
+            
+            // Create a temporary anchor element to trigger download
+            const link = document.createElement('a');
+            link.href = imageDataUrl;
+            link.download = `hold-the-line-result-${win ? 'win' : 'lose'}-score-${score}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error generating/downloading image:', error);
+            alert('Failed to generate image. Please try again.');
+        }
+    }
 
     function endGame(win) {
         isCountdownPlaying? (countdownSound.stop(),isCountdownPlaying = false) : null;
@@ -2447,7 +2464,7 @@
 
         // Play Again button (will be positioned on right side of leaderboard card)
         const playAgainContainer = new PIXI.Container();
-        playAgainContainer.y = leaderboardCard.y; // Same y level as leaderboard
+        playAgainContainer.y = leaderboardCard.y - 40;
         playAgainContainer.x = 390; // Right side
         
         const playBtnBg = new PIXI.Graphics();
@@ -2625,7 +2642,7 @@
         // Share button (below Play Again button)
         const shareButton = new PIXI.Container();
         shareButton.x = playAgainContainer.x; // Same x position as Play Again button
-        shareButton.y = leaderboardCard.y + cardHeight/4; // Below Play Again button
+        shareButton.y = leaderboardCard.y + 30; // Below Play Again button
         
         const shareBtnBg = new PIXI.Graphics();
         const shareBtnWidth = 190;
@@ -2686,6 +2703,56 @@
         });
         
         mainContentContainer.addChild(shareButton);
+        
+        // Download result image button (below share button)
+        const downloadButton = new PIXI.Container();
+        downloadButton.x = playAgainContainer.x; // Same x position as share button
+        downloadButton.y = leaderboardCard.y + 80; // Below share button
+        
+        const downloadBtnBg = new PIXI.Graphics();
+        const downloadBtnWidth = 200; // Wider to fit "Download result image" text
+        const downloadBtnHeight = 25;
+        
+        const redrawDownloadButtonBg = (fill, borderThickness) => {
+            downloadBtnBg.clear();
+            downloadBtnBg.beginFill(fill, 0.75);
+            downloadBtnBg.drawRoundedRect(-downloadBtnWidth/2, -downloadBtnHeight/2, downloadBtnWidth, downloadBtnHeight, 10);
+            downloadBtnBg.endFill();
+            downloadBtnBg.lineStyle(borderThickness, 0x00ff66, 1);
+            downloadBtnBg.drawRoundedRect(-downloadBtnWidth/2, -downloadBtnHeight/2, downloadBtnWidth, downloadBtnHeight, 10);
+        };
+        
+        redrawDownloadButtonBg(0x000000, 2);
+        downloadButton.addChild(downloadBtnBg);
+        
+        const downloadBtnText = new PIXI.Text("Download result image", {
+            fill: "#00ff66",
+            fontSize: 15,
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
+        });
+        downloadBtnText.anchor.set(0.5);
+        downloadButton.addChild(downloadBtnText);
+        
+        downloadButton.interactive = true;
+        downloadButton.buttonMode = true;
+        downloadButton.cursor = "pointer";
+        
+        downloadButton.on("pointerover", () => {
+            redrawDownloadButtonBg(0x1a1a1a, 3);
+            downloadBtnText.style.fill = "#ffff66";
+            downloadButton.scale.set(1.02);
+        });
+        downloadButton.on("pointerout", () => {
+            redrawDownloadButtonBg(0x000000, 2);
+            downloadBtnText.style.fill = "#00ff66";
+            downloadButton.scale.set(1.0);
+        });
+        downloadButton.on("pointerdown", async () => {
+            await downloadResultImage(win, score);
+        });
+        
+        mainContentContainer.addChild(downloadButton);
     }
 
     // Reset game state
