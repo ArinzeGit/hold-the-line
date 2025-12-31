@@ -231,14 +231,83 @@
         progressText.text = "";
     }
 
-    // Placeholder leaderboard
-    let leaderboard = [
-        { name: "Alice", score: 43 },
-        { name: "Bob", score: 38 },
-        { name: "Charlie", score: 33 },
-        { name: "Dana", score: 28 },
-        { name: "Eli", score: 23 },
-    ];
+    // Supabase configuration
+    // TODO: Replace these with your Supabase project credentials
+    // Get them from: https://supabase.com/dashboard/project/_/settings/api
+    const SUPABASE_URL = 'https://cdsekkajsrhuvgcfoody.supabase.co'; // e.g., 'https://xxxxxxxxxxxxx.supabase.co'
+    const SUPABASE_ANON_KEY = 'sb_publishable_IAcarDo99mKmKx66BcfQpQ_5BiNopyl'; // e.g., 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+    
+    // Initialize Supabase client (only if credentials are provided)
+    let supabaseClient = null;
+    if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    // Leaderboard data (will be fetched from Supabase)
+    let leaderboard = [];
+
+    // Supabase leaderboard functions
+    async function fetchLeaderboard() {
+        // If Supabase is not configured, return empty array (will show "Loading..." or empty state)
+        if (!supabaseClient) {
+            console.warn('Supabase not configured. Leaderboard will be empty.');
+            return [];
+        }
+
+        try {
+            const { data, error } = await supabaseClient
+                .from('leaderboard')
+                .select('name, score')
+                .order('score', { ascending: false })
+                .limit(5);
+
+            if (error) {
+                console.error('Error fetching leaderboard:', error);
+                return [];
+            }
+
+            return data || [];
+        } catch (err) {
+            console.error('Exception fetching leaderboard:', err);
+            return [];
+        }
+    }
+
+    async function submitScore(name, score) {
+        // If Supabase is not configured, return false
+        if (!supabaseClient) {
+            console.warn('Supabase not configured. Score not submitted.');
+            return false;
+        }
+
+        // Validate inputs
+        if (!name || name.trim() === '' || typeof score !== 'number' || score < 0) {
+            console.error('Invalid score submission:', { name, score });
+            return false;
+        }
+
+        // Sanitize name (trim and limit length)
+        const sanitizedName = name.trim().substring(0, 20);
+
+        try {
+            const { data, error } = await supabaseClient
+                .from('leaderboard')
+                .insert([
+                    { name: sanitizedName, score: score }
+                ])
+                .select();
+
+            if (error) {
+                console.error('Error submitting score:', error);
+                return false;
+            }
+
+            return true;
+        } catch (err) {
+            console.error('Exception submitting score:', err);
+            return false;
+        }
+    }
 
     function initializeGame() {
     // Resize function is already defined above and event listeners are already attached
@@ -2179,7 +2248,7 @@
         }
     }
 
-    function endGame(win) {
+    async function endGame(win) {
         isCountdownPlaying? (countdownSound.stop(),isCountdownPlaying = false) : null;
         win ? (setTimeout(() => {
             congratulationsSound.play();
@@ -2376,35 +2445,121 @@
         leaderboardContainer.y = -cardHeight/2 + 70; // Below title
         leaderboardCard.addChild(leaderboardContainer);
 
-        // Check if player qualifies
-        const worstEntry = leaderboard[leaderboard.length - 1];
-        let qualifies = score > worstEntry.score;
-        if (qualifies) {
-            leaderboardApplauseSound.play();
-            leaderboard.push({ name: null, score, pending: true });
-            leaderboard.sort((a, b) => b.score - a.score);
-            leaderboard = leaderboard.slice(0, 5);
-        }
+        // Loading text (will be removed after fetch)
+        const loadingText = new PIXI.Text("Loading...", {
+            fill: "#ffffff",
+            fontSize: 20,
+            fontFamily: "Orbitron"
+        });
+        loadingText.anchor.set(0.5);
+        loadingText.y = 40;
+        leaderboardContainer.addChild(loadingText);
 
-        // Render leaderboard (rowWidth should fit within card which is 560px wide, leaving padding)
+        // Fetch leaderboard from Supabase
         const rowWidth = 520;
         const leaderboardYStart = 0;
-        renderLeaderboard(leaderboardContainer, leaderboard, leaderboardYStart, rowWidth);
-
-        // Show input modal if qualified
-        if (qualifies) {
-            const pendingIndex = leaderboard.findIndex(e => e.pending);
-            pendingLeaderboardIndex = pendingIndex;
+        
+        fetchLeaderboard().then((fetchedLeaderboard) => {
+            // Remove loading text
+            if (loadingText.parent) {
+                leaderboardContainer.removeChild(loadingText);
+            }
             
-            setTimeout(() => {
-                showHighScoreInputModal(pendingIndex, (playerName) => {
-                    leaderboard[pendingIndex].name = playerName;
-                    delete leaderboard[pendingIndex].pending;
-                    pendingLeaderboardIndex = null;
-                    renderLeaderboard(leaderboardContainer, leaderboard, leaderboardYStart, rowWidth);
-                });
-            }, 500);
-        }
+            // Update global leaderboard
+            leaderboard = fetchedLeaderboard.length > 0 ? fetchedLeaderboard : [];
+            
+            // Pad with empty entries if leaderboard has fewer than 5 entries
+            while (leaderboard.length < 5) {
+                leaderboard.push({ name: "---", score: 0 });
+            }
+            leaderboard = leaderboard.slice(0, 5); // Ensure max 5 entries
+
+            // Check if player qualifies
+            // Player qualifies if leaderboard has fewer than 5 real entries, or score beats the worst entry
+            const realEntries = leaderboard.filter(e => e.score > 0);
+
+            let qualifies;
+
+            if (realEntries.length < 5) {
+                // There is still room on the leaderboard
+                qualifies = score > 0;
+            } else {
+                const lowestRealScore = Math.min(
+                    ...realEntries.map(e => e.score)
+                );
+
+                // Ignore ties by using strict >
+                qualifies = score > lowestRealScore;
+            }
+            
+            if (qualifies) {
+                leaderboardApplauseSound.play();
+                leaderboard.push({ name: null, score, pending: true });
+                leaderboard.sort((a, b) => b.score - a.score);
+                leaderboard = leaderboard.slice(0, 5);
+            }
+
+            // Render leaderboard
+            renderLeaderboard(leaderboardContainer, leaderboard, leaderboardYStart, rowWidth);
+
+            // Show input modal if qualified
+            if (qualifies) {
+                const pendingIndex = leaderboard.findIndex(e => e.pending);
+                pendingLeaderboardIndex = pendingIndex;
+                
+                setTimeout(() => {
+                    showHighScoreInputModal(pendingIndex, async (playerName) => {
+                        // Submit score to Supabase
+                        const success = await submitScore(playerName, score);
+                        
+                        if (success) {
+                            // Re-fetch leaderboard to get updated data (includes the newly submitted score)
+                            const updatedLeaderboard = await fetchLeaderboard();
+                            if (updatedLeaderboard.length > 0) {
+                                // Pad to 5 entries if needed
+                                while (updatedLeaderboard.length < 5) {
+                                    updatedLeaderboard.push({ name: "---", score: 0 });
+                                }
+                                leaderboard = updatedLeaderboard.slice(0, 5);
+                            } else {
+                                // If re-fetch failed, update the pending entry locally
+                                const currentPendingIndex = leaderboard.findIndex(e => e.pending);
+                                if (currentPendingIndex !== -1) {
+                                    leaderboard[currentPendingIndex].name = playerName;
+                                    delete leaderboard[currentPendingIndex].pending;
+                                }
+                            }
+                        } else {
+                            // If submission failed, just update locally (score won't persist)
+                            const currentPendingIndex = leaderboard.findIndex(e => e.pending);
+                            if (currentPendingIndex !== -1) {
+                                leaderboard[currentPendingIndex].name = playerName;
+                                delete leaderboard[currentPendingIndex].pending;
+                            }
+                        }
+                        
+                        pendingLeaderboardIndex = null;
+                        renderLeaderboard(leaderboardContainer, leaderboard, leaderboardYStart, rowWidth);
+                    });
+                }, 500);
+            }
+        }).catch((err) => {
+            console.error('Error loading leaderboard:', err);
+            // Remove loading text and show error state
+            if (loadingText.parent) {
+                leaderboardContainer.removeChild(loadingText);
+            }
+            
+            // Show empty/error state
+            const errorText = new PIXI.Text("Unable to load leaderboard", {
+                fill: "#ff3333",
+                fontSize: 18,
+                fontFamily: "Orbitron"
+            });
+            errorText.anchor.set(0.5);
+            errorText.y = 40;
+            leaderboardContainer.addChild(errorText);
+        });
 
         mainContentContainer.addChild(leaderboardCard);
 
