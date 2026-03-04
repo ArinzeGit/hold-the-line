@@ -1909,7 +1909,6 @@
     let inputModalContainer = null;
     let inputModalInput = null;
     let inputModalButton = null;
-    let pendingLeaderboardIndex = null;
 
     // Modular leaderboard renderer
     function renderLeaderboard(container, leaderboardData, startY, rowWidth) {
@@ -1945,7 +1944,7 @@
     }
 
     // Create/show input modal for high score entry
-    function showHighScoreInputModal(leaderboardIndex, callback) {
+    function showHighScoreInputModal(callback) {
         // Remove any existing modal
         if (inputModalContainer) {
             gameOverScene.removeChild(inputModalContainer);
@@ -2504,11 +2503,8 @@
 
             // Show input modal if qualified
             if (qualifies) {
-                const pendingIndex = leaderboard.findIndex(e => e.pending);
-                pendingLeaderboardIndex = pendingIndex;
-                
                 setTimeout(() => {
-                    showHighScoreInputModal(pendingIndex, async (playerName) => {
+                    showHighScoreInputModal(async (playerName) => {
                         // Submit score to Supabase
                         const success = await submitScore(playerName, score);
                         
@@ -2537,8 +2533,7 @@
                                 delete leaderboard[currentPendingIndex].pending;
                             }
                         }
-                        
-                        pendingLeaderboardIndex = null;
+
                         renderLeaderboard(leaderboardContainer, leaderboard, leaderboardYStart, rowWidth);
                     });
                 }, 500);
@@ -3007,7 +3002,6 @@
         leaderboard.forEach(entry => {
             if (entry.pending) delete entry.pending;
         });
-        pendingLeaderboardIndex = null;
     }
 
     // Start scene animation handled above (particles and title glow)
