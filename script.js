@@ -1906,9 +1906,27 @@
     startSpawning();
 
     // High score input modal (cleaner approach)
+    let inputModalLayer = null;   // overlay + modal card; blocks view and interaction until saved
     let inputModalContainer = null;
     let inputModalInput = null;
     let inputModalButton = null;
+
+    function removeHighScoreModal() {
+        if (inputModalLayer && inputModalLayer.parent) {
+            gameOverScene.removeChild(inputModalLayer);
+            inputModalLayer.destroy({ children: true });
+            inputModalLayer = null;
+        }
+        inputModalContainer = null;
+        if (inputModalInput && inputModalInput.parentNode) {
+            document.body.removeChild(inputModalInput);
+        }
+        if (inputModalButton && inputModalButton.parentNode) {
+            document.body.removeChild(inputModalButton);
+        }
+        inputModalInput = null;
+        inputModalButton = null;
+    }
 
     // Modular leaderboard renderer
     function renderLeaderboard(container, leaderboardData, startY, rowWidth) {
@@ -1945,22 +1963,26 @@
 
     // Create/show input modal for high score entry
     function showHighScoreInputModal(callback) {
-        // Remove any existing modal
-        if (inputModalContainer) {
-            gameOverScene.removeChild(inputModalContainer);
-            if (inputModalInput && inputModalInput.parentNode) {
-                document.body.removeChild(inputModalInput);
-            }
-            if (inputModalButton && inputModalButton.parentNode) {
-                document.body.removeChild(inputModalButton);
-            }
-        }
+        removeHighScoreModal();
 
-        // Create modal container
+        // Layer: full-screen block overlay (almost invisible, not pressable) + modal card on top
+        inputModalLayer = new PIXI.Container();
+
+        // Full-screen overlay: makes content behind almost invisible and blocks all pointer/touch
+        const blockOverlay = new PIXI.Graphics();
+        blockOverlay.beginFill(0x000000, 0.92);
+        blockOverlay.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        blockOverlay.endFill();
+        blockOverlay.eventMode = "static";
+        blockOverlay.cursor = "default";
+        inputModalLayer.addChild(blockOverlay);
+
+        // Modal card (title, prompt) — only this + DOM input/button are visible and interactive
         inputModalContainer = new PIXI.Container();
         inputModalContainer.x = GAME_WIDTH / 2;
         inputModalContainer.y = GAME_HEIGHT / 2;
-        gameOverScene.addChild(inputModalContainer);
+        inputModalLayer.addChild(inputModalContainer);
+        gameOverScene.addChild(inputModalLayer);
 
         // Modal background (dark card with border)
         const modalBg = new PIXI.Graphics();
@@ -2062,15 +2084,7 @@
             if (inputModalInput._resizeHandler) {
                 window.removeEventListener("resize", inputModalInput._resizeHandler);
             }
-            
-            // Clean up
-            gameOverScene.removeChild(inputModalContainer);
-            document.body.removeChild(inputModalInput);
-            document.body.removeChild(inputModalButton);
-            inputModalContainer = null;
-            inputModalInput = null;
-            inputModalButton = null;
-            
+            removeHighScoreModal();
             callback(playerName);
         }
 
@@ -2272,19 +2286,7 @@
         movementTouchId = null;
         lastTouchX = null;
         
-        // Clean up any existing input modal
-        if (inputModalContainer) {
-            gameOverScene.removeChild(inputModalContainer);
-            if (inputModalInput && inputModalInput.parentNode) {
-                document.body.removeChild(inputModalInput);
-            }
-            if (inputModalButton && inputModalButton.parentNode) {
-                document.body.removeChild(inputModalButton);
-            }
-            inputModalContainer = null;
-            inputModalInput = null;
-            inputModalButton = null;
-        }
+        removeHighScoreModal();
         
         // Clear any existing timeout before setting a new one
         if (backgroundMusicTimeout) {
@@ -2984,23 +2986,7 @@
     }
 
     function cleanUnsavedEntries() {
-        // Clear any existing input modal
-        if (inputModalContainer) {
-            gameOverScene.removeChild(inputModalContainer);
-            inputModalContainer = null;
-        }
-        if (inputModalInput && inputModalInput.parentNode) {
-            if (inputModalInput._resizeHandler) {
-                window.removeEventListener("resize", inputModalInput._resizeHandler);
-            }
-            document.body.removeChild(inputModalInput);
-            inputModalInput = null;
-        }
-        if (inputModalButton && inputModalButton.parentNode) {
-            document.body.removeChild(inputModalButton);
-            inputModalButton = null;
-        }
-        
+        removeHighScoreModal();
         // Clean up pending entries
         leaderboard.forEach(entry => {
             if (entry.pending) delete entry.pending;
