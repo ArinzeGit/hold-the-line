@@ -2027,22 +2027,25 @@
         inputModalButton.style.cursor = "pointer";
         inputModalButton.style.transition = "background 0.2s";
 
-        // Position input and button (centered on screen)
+        // Position input and button (centered on canvas). Use left/top + half-width/half-height
+        // so centering doesn't depend on transform; then only scale() to match canvas.
         function positionModalElements() {
             const canvasRect = app.view.getBoundingClientRect();
             const scale = app.stage.scale.x;
             const centerX = canvasRect.left + canvasRect.width / 2;
             const centerY = canvasRect.top + canvasRect.height / 2;
-            
-            inputModalInput.style.left = `${centerX - 150}px`;
-            inputModalInput.style.top = `${centerY - 5}px`;
-            inputModalInput.style.transform = `scale(${scale}) translate(-50%, -50%)`;
-            inputModalInput.style.transformOrigin = "center";
-            
-            inputModalButton.style.left = `${centerX - 75}px`;
-            inputModalButton.style.top = `${centerY + 45}px`;
-            inputModalButton.style.transform = `scale(${scale}) translate(-50%, -50%)`;
-            inputModalButton.style.transformOrigin = "center";
+            const inputW = 300, inputH = 35;
+            const buttonW = 150, buttonH = 40;
+
+            inputModalInput.style.left = `${centerX - inputW / 2}px`;
+            inputModalInput.style.top = `${centerY - inputH / 2 + 10}px`;
+            inputModalInput.style.transform = `scale(${scale})`;
+            inputModalInput.style.transformOrigin = "center center";
+
+            inputModalButton.style.left = `${centerX - buttonW / 2}px`;
+            inputModalButton.style.top = `${centerY - buttonH / 2 + 35}px`;
+            inputModalButton.style.transform = `scale(${scale})`;
+            inputModalButton.style.transformOrigin = "center center";
         }
 
         positionModalElements();
