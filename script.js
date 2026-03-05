@@ -350,6 +350,10 @@
     const collectibles = [];
     const enemyBullets = [];
 
+    // Fair letter cycle: three of each letter per cycle (21 letters), then reset
+    const letterPoolThreePerCycle = TARGET_WORD.split("").concat(TARGET_WORD.split(""), TARGET_WORD.split(""));
+    let lettersAvailableInCycle = letterPoolThreePerCycle.slice();
+
     // Scenes
     const startScene = new PIXI.Container();
     const gameScene = new PIXI.Container();
@@ -1524,10 +1528,16 @@
         enemyBullets.push(bullet);
     }
 
-    // Spawn collectible
+    // Spawn collectible (fair cycle: pick only from letters not yet shown this cycle)
     function spawnCollectible() {
-    const letter = TARGET_WORD[Math.floor(Math.random() * TARGET_WORD.length)];
-    const col = new PIXI.Text(letter, {
+        if (lettersAvailableInCycle.length === 0) {
+            lettersAvailableInCycle = letterPoolThreePerCycle.slice();
+        }
+        const idx = Math.floor(Math.random() * lettersAvailableInCycle.length);
+        const letter = lettersAvailableInCycle[idx];
+        lettersAvailableInCycle.splice(idx, 1);
+
+        const col = new PIXI.Text(letter, {
         fill: "#ffff00",
         fontSize: 32,
         fontWeight: "bold",
@@ -1886,7 +1896,7 @@
         // clear any old intervals before starting new
         stopSpawning();
 
-        enemySpawnInterval = setInterval(spawnEnemy, 4000);
+        enemySpawnInterval = setInterval(spawnEnemy, 1000);
         collectibleSpawnInterval = setInterval(spawnCollectible, 2000);
     }
 
@@ -2968,6 +2978,8 @@
         enemies.length = 0;
         collectibles.length = 0;
         enemyBullets.length = 0;
+
+        lettersAvailableInCycle = letterPoolThreePerCycle.slice();
 
         // Reset player
         player.x = GAME_WIDTH / 2;
