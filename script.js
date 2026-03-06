@@ -1928,8 +1928,13 @@
             inputModalLayer = null;
         }
         inputModalContainer = null;
-        if (inputModalInput && inputModalInput.parentNode) {
-            document.body.removeChild(inputModalInput);
+        if (inputModalInput) {
+            if (inputModalInput._viewportResizeHandler && window.visualViewport) {
+                window.visualViewport.removeEventListener("resize", inputModalInput._viewportResizeHandler);
+            }
+            if (inputModalInput.parentNode) {
+                document.body.removeChild(inputModalInput);
+            }
         }
         if (inputModalButton && inputModalButton.parentNode) {
             document.body.removeChild(inputModalButton);
@@ -2084,6 +2089,23 @@
         document.body.appendChild(inputModalInput);
         document.body.appendChild(inputModalButton);
         inputModalInput.focus();
+
+        // Mobile: when keyboard closes, restore scroll so page doesn't stay shifted (first-time dismiss bug)
+        function restoreScrollAfterKeyboard() {
+            window.scrollTo(0, 0);
+        }
+        inputModalInput.addEventListener("blur", () => {
+            setTimeout(restoreScrollAfterKeyboard, 200);
+        });
+        const viewportResizeHandler = () => {
+            if (window.visualViewport && window.visualViewport.height > window.innerHeight * 0.6) {
+                restoreScrollAfterKeyboard();
+            }
+        };
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener("resize", viewportResizeHandler);
+        }
+        inputModalInput._viewportResizeHandler = viewportResizeHandler;
 
         // Save handler
         function saveName() {
