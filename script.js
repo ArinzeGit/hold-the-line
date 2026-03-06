@@ -2072,12 +2072,12 @@
             const buttonW = 150, buttonH = 40;
 
             inputModalInput.style.left = `${centerX - inputW / 2}px`;
-            inputModalInput.style.top = `${centerY - inputH / 2 + 10}px`;
+            inputModalInput.style.top = `${centerY - inputH / 2 + 15}px`;
             inputModalInput.style.transform = `scale(${scale})`;
             inputModalInput.style.transformOrigin = "center center";
 
             inputModalButton.style.left = `${centerX - buttonW / 2}px`;
-            inputModalButton.style.top = `${centerY - buttonH / 2 + 35}px`;
+            inputModalButton.style.top = `${centerY - buttonH / 2 + 60}px`;
             inputModalButton.style.transform = `scale(${scale})`;
             inputModalButton.style.transformOrigin = "center center";
         }
