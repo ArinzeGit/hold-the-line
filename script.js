@@ -1329,6 +1329,11 @@
     window.addEventListener("keydown", e => {
         keys[e.code] = true;
         isTouchInput = false; // Mark as keyboard input
+        // Space: shoot on each press (not hold repeat), same as mobile tap-to-shoot
+        if (e.code === "Space" && !e.repeat && !gameOver && startTime) {
+            shootProjectile();
+            e.preventDefault();
+        }
     });
     window.addEventListener("keyup", e => {
         keys[e.code] = false;
@@ -1732,14 +1737,6 @@
         if (keys["ArrowLeft"] || keys["KeyA"]) player.x -= PLAYER_SPEED;
         if (keys["ArrowRight"] || keys["KeyD"]) player.x += PLAYER_SPEED;
         player.x = Math.max(20, Math.min(GAME_WIDTH - 20, player.x));
-
-        // Shooting
-        if (keys["Space"]) {
-            if (!player.lastShot || Date.now() - player.lastShot > 300) {
-                shootProjectile();
-                player.lastShot = Date.now();
-            }
-        }
 
         // Move projectiles
         for (let i = projectiles.length - 1; i >= 0; i--) {
