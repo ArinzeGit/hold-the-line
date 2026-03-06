@@ -1388,19 +1388,19 @@
         const localX = screenToLocalX(e.clientX, e.clientY);
         const half = getHalfWidth();
 
-        if (localX < half && movementTouchId === null) {
-            // LEFT SIDE → movement
-            movementTouchId = id;
-            lastTouchX = localX;
-            // Reset hide flag in case user touched again before previous hide completed
-            shouldHideAfterNeutral = false;
-            // Show joystick at fixed position
-            joystickContainer.visible = true;
-            updateJoystickState('neutral');
+        if (localX < half) {
+            // LEFT SIDE → movement only (ignore if movement already active)
+            if (movementTouchId === null) {
+                movementTouchId = id;
+                lastTouchX = localX;
+                // Reset hide flag in case user touched again before previous hide completed
+                shouldHideAfterNeutral = false;
+                joystickContainer.visible = true;
+                updateJoystickState('neutral');
+            }
         } else {
             // RIGHT SIDE → shoot
             shootProjectile();
-            // Show shoot flash effect
             showShootFlash();
         }
     }
@@ -1408,9 +1408,17 @@
     // TOUCH MOVE
     function onDomTouchMove(e) {
         const id = e.pointerId;
-        if (id !== movementTouchId) return;
-
         const x = screenToLocalX(e.clientX, e.clientY);
+
+        if (id !== movementTouchId) {
+            // Adopt-by-zone: recover from pointerId reassignment (mobile browsers can change id mid-gesture)
+            if (movementTouchId !== null && x < getHalfWidth()) {
+                movementTouchId = id;
+            } else {
+                return;
+            }
+        }
+
         const dx = x - lastTouchX;
 
         if (Math.abs(dx) < MOVE_THRESHOLD) return;
