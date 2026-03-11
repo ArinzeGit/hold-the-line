@@ -1033,7 +1033,7 @@
         albumLinkText.style.fill = "#ffff00"; // Normal text color
     });
     albumLinkContainer.on("pointerdown", () => {
-        window.open("http://hevyhub.com/Manfred-Killer", "_blank");
+        window.open("https://push.fm/fl/soldier-manfred", "_blank");
     });
 
     // Add subtle glow animation to title (yellow theme to match album)
@@ -2826,7 +2826,7 @@
             albumButton.scale.set(1.0); // Reset scale
         });
         albumButton.on("pointerdown", () => {
-            window.open("http://hevyhub.com/Manfred-Killer", "_blank");
+            window.open("https://push.fm/fl/soldier-manfred", "_blank");
         });
 
         gameOverScene.addChild(albumButton);
