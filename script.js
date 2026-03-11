@@ -743,13 +743,13 @@
     contentPanel.beginFill(0x000000, 0.75);
     contentPanel.drawRoundedRect(-320, -220, 640, 440, 20);
     contentPanel.endFill();
-    contentPanel.lineStyle(3, 0x00ff66, 1);
+    contentPanel.lineStyle(3, 0xffff00, 1);
     contentPanel.drawRoundedRect(-320, -220, 640, 440, 20);
     gameContentContainer.addChild(contentPanel);
 
     // Title
     const titleText = new PIXI.Text("HOLD THE LINE", {
-        fill: "#ffff00", // Yellow to match album art
+        fill: "#ffff00",
         fontSize: 44,
         fontWeight: "900",
         fontFamily: "Orbitron",
@@ -763,7 +763,7 @@
 
     // Subtitle
     const subtitleText = new PIXI.Text("Official Game", {
-        fill: "#00ff66",
+        fill: "#ffff00",
         fontSize: 16,
         fontFamily: "Orbitron",
         letterSpacing: 3
@@ -796,7 +796,7 @@
 
     // Play Button Background
     const playBtnBg = new PIXI.Graphics();
-    playBtnBg.beginFill(0x00ff66, 0.2);
+    playBtnBg.beginFill(0x1f2937);
     playBtnBg.drawRoundedRect(-100, -25, 200, 50, 12);
     playBtnBg.endFill();
     playBtnBg.lineStyle(2, 0x00ff66, 1);
@@ -822,7 +822,7 @@
     // Hover effects
     playButtonContainer.on("pointerover", () => {
         playBtnBg.clear();
-        playBtnBg.beginFill(0x00ff66, 0.3);
+        playBtnBg.beginFill(0x374151);
         playBtnBg.drawRoundedRect(-100, -25, 200, 50, 12);
         playBtnBg.endFill();
         playBtnBg.lineStyle(3, 0x00ff66, 1);
@@ -833,7 +833,7 @@
     
     playButtonContainer.on("pointerout", () => {
         playBtnBg.clear();
-        playBtnBg.beginFill(0x00ff66, 0.2);
+        playBtnBg.beginFill(0x1f2937);
         playBtnBg.drawRoundedRect(-100, -25, 200, 50, 12);
         playBtnBg.endFill();
         playBtnBg.lineStyle(2, 0x00ff66, 1);
@@ -879,17 +879,17 @@
                 // Map sin from [-1, 1] to [0, 1] for interpolation
                 const t = (Math.sin(fingerOffset) + 1) / 2; // t ranges from 0 to 1
                 
-                // Interpolate text color: #ffff00 (normal) to #ffff99 (hover)
-                const normalTextR = 255, normalTextG = 255, normalTextB = 0;
+                // Interpolate text color: #00ff66 (normal) to #ffff99 (hover)
+                const normalTextR = 0, normalTextG = 255, normalTextB = 102;
                 const hoverTextR = 255, hoverTextG = 255, hoverTextB = 153;
                 const textR = Math.floor(normalTextR + (hoverTextR - normalTextR) * t);
                 const textG = Math.floor(normalTextG + (hoverTextG - normalTextG) * t);
                 const textB = Math.floor(normalTextB + (hoverTextB - normalTextB) * t);
                 musicButtonText.style.fill = `#${textR.toString(16).padStart(2, '0')}${textG.toString(16).padStart(2, '0')}${textB.toString(16).padStart(2, '0')}`;
                 
-                // Interpolate background: 0x000000 (normal) to 0x1a1a1a (hover)
-                const normalBg = 0x000000;
-                const hoverBg = 0x1a1a1a;
+                // Interpolate background: 0x1f2937 (normal) to 0x374151 (hover)
+                const normalBg = 0x1f2937;
+                const hoverBg = 0x374151;
                 const bgR = Math.floor((normalBg >> 16) + ((hoverBg >> 16) - (normalBg >> 16)) * t);
                 const bgG = Math.floor(((normalBg >> 8) & 0xFF) + (((hoverBg >> 8) & 0xFF) - ((normalBg >> 8) & 0xFF)) * t);
                 const bgB = Math.floor((normalBg & 0xFF) + ((hoverBg & 0xFF) - (normalBg & 0xFF)) * t);
@@ -911,15 +911,15 @@
             musicBtnBg.beginFill(fill, 1);
             musicBtnBg.drawRoundedRect(-width/2, -height/2, width, height, 10);
             musicBtnBg.endFill();
-            musicBtnBg.lineStyle(borderThickness, 0xffff00, 1);
+            musicBtnBg.lineStyle(borderThickness, 0x00ff66, 1);
             musicBtnBg.drawRoundedRect(-width/2, -height/2, width, height, 10);
         };
         
-        redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2);
+        redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x1f2937, 2);
         musicButtonContainer.addChild(musicBtnBg);
 
         const musicButtonText = new PIXI.Text("🎵 Tap to enable music", {
-            fill: "#ffff00",
+            fill: "#00ff66",
             fontSize: 18,
             fontWeight: "600",
             fontFamily: "Orbitron",
@@ -935,15 +935,15 @@
         
         musicButtonContainer.on("pointerover", () => {
             isMusicButtonHovered = true;
-            redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x1a1a1a, 3);
+            redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x374151, 3);
             musicButtonText.style.fill = "#ffff99";
             musicButtonContainer.scale.set(1.0); // Reset scale on hover
         });
         
         musicButtonContainer.on("pointerout", () => {
             isMusicButtonHovered = false;
-            redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2);
-            musicButtonText.style.fill = "#ffff00";
+            redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x1f2937, 2);
+            musicButtonText.style.fill = "#00ff66";
             // Scale will be controlled by pulse animation, not reset to 1.0
         });
         
@@ -953,7 +953,7 @@
                 musicEnabled = true;
                 musicButtonText.text = "🎵 Music Enabled";
                 musicBtnWidth = 205;
-                redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2);
+                redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x1f2937, 2);
                 
                 // Show warning about silent mode after brief delay
                 setTimeout(() => {
@@ -964,7 +964,7 @@
                     // Increase button width to accommodate longer text
                     musicBtnWidth = 310;
                     musicBtnHeight = 60;
-                    redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x000000, 2);
+                    redrawButtonBg(musicBtnWidth, musicBtnHeight, 0x1f2937, 2);
                     
                     // Show warning message for a moment, then hide button and remove ticker
                     setTimeout(() => {
@@ -994,15 +994,15 @@
     const buttonWidth = 350;
     const buttonHeight = 40;
     const buttonRadius = 10;
-    albumLinkBg.beginFill(0x000000, 1);
+    albumLinkBg.beginFill(0x1f2937, 1);
     albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
     albumLinkBg.endFill();
-    albumLinkBg.lineStyle(2, 0xffff00, 0.9);
+    albumLinkBg.lineStyle(2, 0x00ff66, 0.9);
     albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
     albumLinkContainer.addChild(albumLinkBg);
 
     const albumLinkText = new PIXI.Text("🎵 Get the SOLDIER EP", {
-        fill: "#ffff00",
+        fill: "#00ff66",
         fontSize: 22,
         fontWeight: "700",
         fontFamily: "Orbitron",
@@ -1016,21 +1016,21 @@
     albumLinkContainer.cursor = "pointer";
     albumLinkContainer.on("pointerover", () => {
         albumLinkBg.clear();
-        albumLinkBg.beginFill(0x1a1a1a, 1); // Lighter background, but still opaque
+        albumLinkBg.beginFill(0x374151, 1);
         albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
         albumLinkBg.endFill();
-        albumLinkBg.lineStyle(3, 0xffff00, 1); // Thicker border on hover
+        albumLinkBg.lineStyle(3, 0x00ff66, 1);
         albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
-        albumLinkText.style.fill = "#ffff99"; // Brighter text
+        albumLinkText.style.fill = "#ffff99";
     });
     albumLinkContainer.on("pointerout", () => {
         albumLinkBg.clear();
-        albumLinkBg.beginFill(0x000000, 1); // Back to opaque black
+        albumLinkBg.beginFill(0x1f2937, 1);
         albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
         albumLinkBg.endFill();
-        albumLinkBg.lineStyle(2, 0xffff00, 0.9); // Normal border
+        albumLinkBg.lineStyle(2, 0x00ff66, 0.9);
         albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
-        albumLinkText.style.fill = "#ffff00"; // Normal text color
+        albumLinkText.style.fill = "#00ff66";
     });
     albumLinkContainer.on("pointerdown", () => {
         window.open("https://push.fm/fl/soldier-manfred", "_blank");
@@ -1164,13 +1164,13 @@
     timerCardBg.beginFill(0x000000, 0.75);
     timerCardBg.drawRoundedRect(0, 0, timerCardWidth, timerCardHeight, 10);
     timerCardBg.endFill();
-    timerCardBg.lineStyle(2, 0x00ff66, 1); // Green border for timer
+    timerCardBg.lineStyle(2, 0xffff00, 1); // Yellow border for timer
     timerCardBg.drawRoundedRect(0, 0, timerCardWidth, timerCardHeight, 10);
     timerCard.addChild(timerCardBg);
     
     // Timer text (inside card)
     const timerText = new PIXI.Text(`Time left: 60s`, {
-        fill: "#00ff66", // Green to match border
+        fill: "#ffff00", // Yellow to match border
         fontSize: 22,
         fontFamily: "Orbitron",
         fontWeight: "bold",
@@ -1969,7 +1969,7 @@
             // Score (green, right aligned)
             const scoreText = new PIXI.Text(
                 `${entry.score}`,
-                { fill: "#00ff66", fontSize: 22, fontFamily: "Orbitron" }
+                { fill: "#ffff00", fontSize: 22, fontFamily: "Orbitron" }
             );
             scoreText.anchor.set(1, 0.5);
             scoreText.x = rowWidth;
@@ -2416,7 +2416,7 @@
         resultCardBg.beginFill(0x000000, 0.75);
         resultCardBg.drawRoundedRect(-280, -60, 560, 120, 15);
         resultCardBg.endFill();
-        resultCardBg.lineStyle(3, win ? 0x00ff66 : 0xff3333, 1);
+        resultCardBg.lineStyle(3, 0xffff00, 1);
         resultCardBg.drawRoundedRect(-280, -60, 560, 120, 15);
         resultCard.addChild(resultCardBg);
 
@@ -2442,7 +2442,7 @@
         resultCard.addChild(scoreLabel);
 
         const scoreValue = new PIXI.Text(`${score}`, {
-            fill: "#00ff66",
+            fill: "#ffff00",
             fontSize: 28,
             fontWeight: "bold",
             fontFamily: "Orbitron"
@@ -2452,6 +2452,92 @@
         scoreValue.y = 15;
         resultCard.addChild(scoreValue);
         mainContentContainer.addChild(resultCard);
+
+        // Action buttons beside result card (left: Back to Menu, Share on X; right: Play Again, Download)
+        const actionBtnWidth = 180;
+        const actionBtnHeight = 42;
+        const actionBtnRadius = 21;
+        const actionBtnYOffset = 36;
+
+        const drawPillBtn = (g, w, h, r, fill, borderColor, borderWidth) => {
+            g.clear();
+            g.beginFill(fill);
+            g.drawRoundedRect(-w/2, -h/2, w, h, r);
+            g.endFill();
+            g.lineStyle(borderWidth, borderColor, 1);
+            g.drawRoundedRect(-w/2, -h/2, w, h, r);
+        };
+
+        // Back to Menu (left, top)
+        const backToMenuContainer = new PIXI.Container();
+        backToMenuContainer.x = -390;
+        backToMenuContainer.y = -actionBtnYOffset;
+
+        const backBtnBg = new PIXI.Graphics();
+        drawPillBtn(backBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x1f2937, 0x00ff66, 2);
+        backToMenuContainer.addChild(backBtnBg);
+
+        const backToMenu = new PIXI.Text("↩ Back to Menu", {
+            fill: "#00ff66",
+            fontSize: 18,
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
+        });
+        backToMenu.anchor.set(0.5);
+        backToMenuContainer.addChild(backToMenu);
+
+        backToMenuContainer.interactive = true;
+        backToMenuContainer.buttonMode = true;
+        backToMenuContainer.cursor = "pointer";
+        backToMenuContainer.on("pointerover", () => {
+            drawPillBtn(backBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x374151, 0x00ff66, 2);
+            backToMenu.style.fill = "#ffff66";
+        });
+        backToMenuContainer.on("pointerout", () => {
+            drawPillBtn(backBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x1f2937, 0x00ff66, 2);
+            backToMenu.style.fill = "#00ff66";
+        });
+        backToMenuContainer.on("pointerdown", () => {
+            cleanUnsavedEntries();
+            gameOverScene.visible = false;
+            gameScene.visible = false;
+            startScene.visible = true;
+        });
+
+        mainContentContainer.addChild(backToMenuContainer);
+
+        // Play Again (right, top)
+        const playAgainContainer = new PIXI.Container();
+        playAgainContainer.x = 390;
+        playAgainContainer.y = -actionBtnYOffset;
+
+        const playBtnBg = new PIXI.Graphics();
+        drawPillBtn(playBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x1f2937, 0x00ff66, 2);
+        playAgainContainer.addChild(playBtnBg);
+
+        const playAgain = new PIXI.Text("▶ Play Again", {
+            fill: "#00ff66",
+            fontSize: 18,
+            fontWeight: "bold",
+            fontFamily: "Orbitron"
+        });
+        playAgain.anchor.set(0.5);
+        playAgainContainer.addChild(playAgain);
+
+        playAgainContainer.interactive = true;
+        playAgainContainer.buttonMode = true;
+        playAgainContainer.cursor = "pointer";
+        playAgainContainer.on("pointerover", () => {
+            drawPillBtn(playBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x374151, 0x00ff66, 3);
+            playAgain.style.fill = "#ffff66";
+        });
+        playAgainContainer.on("pointerout", () => {
+            drawPillBtn(playBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x1f2937, 0x00ff66, 2);
+            playAgain.style.fill = "#00ff66";
+        });
+        playAgainContainer.on("pointerdown", resetGame);
+
+        mainContentContainer.addChild(playAgainContainer);
 
         // Leaderboard Card - sized to fit only the list
         const leaderboardCard = new PIXI.Container();
@@ -2600,109 +2686,6 @@
 
         mainContentContainer.addChild(leaderboardCard);
 
-        // Back to Menu button (will be positioned on left side of leaderboard card)
-        const backToMenuContainer = new PIXI.Container();
-        backToMenuContainer.y = leaderboardCard.y; // Same y level as leaderboard
-        backToMenuContainer.x = -390; // Left side
-        
-        const backBtnBg = new PIXI.Graphics();
-        const backBtnWidth = 200;
-        const backBtnHeight = 40;
-        backBtnBg.beginFill(0x000000, 0.75);
-        backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
-        backBtnBg.endFill();
-        backBtnBg.lineStyle(2, 0xffffff, 1);
-        backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
-        backToMenuContainer.addChild(backBtnBg);
-
-        const backToMenu = new PIXI.Text("↩ Back to Menu", {
-            fill: "#ffffff",
-            fontSize: 20,
-            fontWeight: "bold",
-            fontFamily: "Orbitron"
-        });
-        backToMenu.anchor.set(0.5);
-        backToMenuContainer.addChild(backToMenu);
-
-        backToMenuContainer.interactive = true;
-        backToMenuContainer.buttonMode = true;
-        backToMenuContainer.cursor = "pointer";
-        backToMenuContainer.on("pointerover", () => {
-            backBtnBg.clear();
-            backBtnBg.beginFill(0x333333, 0.85);
-            backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
-            backBtnBg.endFill();
-            backBtnBg.lineStyle(3, 0xffff66, 1);
-            backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
-            backToMenu.style.fill = "#ffff66";
-        });
-        backToMenuContainer.on("pointerout", () => {
-            backBtnBg.clear();
-            backBtnBg.beginFill(0x000000, 0.75);
-            backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
-            backBtnBg.endFill();
-            backBtnBg.lineStyle(2, 0xffffff, 1);
-            backBtnBg.drawRoundedRect(-backBtnWidth/2, -backBtnHeight/2, backBtnWidth, backBtnHeight, 10);
-            backToMenu.style.fill = "#ffffff";
-        });
-        backToMenuContainer.on("pointerdown", () => {
-            cleanUnsavedEntries();
-            gameOverScene.visible = false;
-            gameScene.visible = false;
-            startScene.visible = true;
-        });
-
-        mainContentContainer.addChild(backToMenuContainer);
-
-        // Play Again button (will be positioned on right side of leaderboard card)
-        const playAgainContainer = new PIXI.Container();
-        playAgainContainer.y = leaderboardCard.y - 40;
-        playAgainContainer.x = 390; // Right side
-        
-        const playBtnBg = new PIXI.Graphics();
-        const playBtnWidth = 200;
-        const playBtnHeight = 40;
-        playBtnBg.beginFill(0x00ff66, 0.3);
-        playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-        playBtnBg.endFill();
-        playBtnBg.lineStyle(2, 0x00ff66, 1);
-        playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-        playAgainContainer.addChild(playBtnBg);
-
-        const playAgain = new PIXI.Text("▶ Play Again", {
-            fill: "#00ff66",
-            fontSize: 20,
-            fontWeight: "bold",
-            fontFamily: "Orbitron"
-        });
-        playAgain.anchor.set(0.5);
-        playAgainContainer.addChild(playAgain);
-
-        playAgainContainer.interactive = true;
-        playAgainContainer.buttonMode = true;
-        playAgainContainer.cursor = "pointer";
-        playAgainContainer.on("pointerover", () => {
-            playBtnBg.clear();
-            playBtnBg.beginFill(0x00ff66, 0.4);
-            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-            playBtnBg.endFill();
-            playBtnBg.lineStyle(3, 0x00ff66, 1);
-            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-            playAgain.style.fill = "#ffff66";
-        });
-        playAgainContainer.on("pointerout", () => {
-            playBtnBg.clear();
-            playBtnBg.beginFill(0x00ff66, 0.3);
-            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-            playBtnBg.endFill();
-            playBtnBg.lineStyle(2, 0x00ff66, 1);
-            playBtnBg.drawRoundedRect(-playBtnWidth/2, -playBtnHeight/2, playBtnWidth, playBtnHeight, 10);
-            playAgain.style.fill = "#00ff66";
-        });
-        playAgainContainer.on("pointerdown", resetGame);
-        
-        mainContentContainer.addChild(playAgainContainer);
-
         // Album button with art inside
         const albumButton = new PIXI.Container();
         albumButton.x = GAME_WIDTH / 2;
@@ -2718,12 +2701,12 @@
             albumBtnBg.beginFill(fill, 1);
             albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
             albumBtnBg.endFill();
-            albumBtnBg.lineStyle(borderThickness, 0xffff00, 1);
+            albumBtnBg.lineStyle(borderThickness, 0x00ff66, 1);
             albumBtnBg.drawRoundedRect(-albumBtnWidth/2, -albumBtnHeight/2, albumBtnWidth, albumBtnHeight, 12);
         };
         
         // Initial button state
-        redrawAlbumButtonBg(0x000000, 2);
+        redrawAlbumButtonBg(0x1f2937, 2);
         albumButton.addChild(albumBtnBg);
 
         // Album art thumbnail (inside button, left side)
@@ -2749,7 +2732,7 @@
 
         // Album button text (right side of art)
         const albumBtnText = new PIXI.Text("🎵 Get the SOLDIER EP", {
-            fill: "#ffff00",
+            fill: "#00ff66",
             fontSize: 22,
             fontWeight: "bold",
             fontFamily: "Orbitron"
@@ -2782,17 +2765,17 @@
                 // Map sin from [-1, 1] to [0, 1] for interpolation
                 const t = (Math.sin(albumFingerOffset) + 1) / 2; // t ranges from 0 to 1
                 
-                // Interpolate text color: #ffff00 (normal) to #ffff99 (hover)
-                const normalTextR = 255, normalTextG = 255, normalTextB = 0;
+                // Interpolate text color: #00ff66 (normal) to #ffff99 (hover)
+                const normalTextR = 0, normalTextG = 255, normalTextB = 102;
                 const hoverTextR = 255, hoverTextG = 255, hoverTextB = 153;
                 const textR = Math.floor(normalTextR + (hoverTextR - normalTextR) * t);
                 const textG = Math.floor(normalTextG + (hoverTextG - normalTextG) * t);
                 const textB = Math.floor(normalTextB + (hoverTextB - normalTextB) * t);
                 albumBtnText.style.fill = `#${textR.toString(16).padStart(2, '0')}${textG.toString(16).padStart(2, '0')}${textB.toString(16).padStart(2, '0')}`;
                 
-                // Interpolate background: 0x000000 (normal) to 0x1a1a1a (hover)
-                const normalBg = 0x000000;
-                const hoverBg = 0x1a1a1a;
+                // Interpolate background: 0x1f2937 (normal) to 0x374151 (hover)
+                const normalBg = 0x1f2937;
+                const hoverBg = 0x374151;
                 const bgR = Math.floor((normalBg >> 16) + ((hoverBg >> 16) - (normalBg >> 16)) * t);
                 const bgG = Math.floor(((normalBg >> 8) & 0xFF) + (((hoverBg >> 8) & 0xFF) - ((normalBg >> 8) & 0xFF)) * t);
                 const bgB = Math.floor((normalBg & 0xFF) + ((hoverBg & 0xFF) - (normalBg & 0xFF)) * t);
@@ -2815,14 +2798,14 @@
         
         albumButton.on("pointerover", () => {
             isAlbumButtonHovered = true;
-            redrawAlbumButtonBg(0x1a1a1a, 3);
+            redrawAlbumButtonBg(0x374151, 3);
             albumBtnText.style.fill = "#ffff99"; // Brighter text
             albumButton.scale.set(1.02); // Slight scale up for emphasis
         });
         albumButton.on("pointerout", () => {
             isAlbumButtonHovered = false;
-            redrawAlbumButtonBg(0x000000, 2);
-            albumBtnText.style.fill = "#ffff00"; // Normal text color
+            redrawAlbumButtonBg(0x1f2937, 2);
+            albumBtnText.style.fill = "#00ff66";
             albumButton.scale.set(1.0); // Reset scale
         });
         albumButton.on("pointerdown", () => {
@@ -2831,119 +2814,88 @@
 
         gameOverScene.addChild(albumButton);
 
-        // Share button (below Play Again button)
+        // Share on X (left, bottom) — pill button beside result card
         const shareButton = new PIXI.Container();
-        shareButton.x = playAgainContainer.x; // Same x position as Play Again button
-        shareButton.y = leaderboardCard.y + 30; // Below Play Again button
-        
+        shareButton.x = -390;
+        shareButton.y = actionBtnYOffset;
+
         const shareBtnBg = new PIXI.Graphics();
-        const shareBtnWidth = 190;
-        const shareBtnHeight = 30;
-        
-        const redrawShareButtonBg = (fill, borderThickness) => {
-            shareBtnBg.clear();
-            shareBtnBg.beginFill(fill, 0.75);
-            shareBtnBg.drawRoundedRect(-shareBtnWidth/2, -shareBtnHeight/2, shareBtnWidth, shareBtnHeight, 10);
-            shareBtnBg.endFill();
-            shareBtnBg.lineStyle(borderThickness, 0x00ff66, 1);
-            shareBtnBg.drawRoundedRect(-shareBtnWidth/2, -shareBtnHeight/2, shareBtnWidth, shareBtnHeight, 10);
-        };
-        
-        redrawShareButtonBg(0x000000, 2);
+        drawPillBtn(shareBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x1f2937, 0x00ff66, 2);
         shareButton.addChild(shareBtnBg);
-        
-        // Container for icon + text to center them together
+
         const shareButtonContent = new PIXI.Container();
         shareButton.addChild(shareButtonContent);
-        
-        // X icon sprite
+
         const xIconSprite = new PIXI.Sprite(PIXI.Assets.get('assets/x-twitter-icon.png'));
         xIconSprite.anchor.set(0.5);
-        const iconSize = 24; // Size of the icon
+        const iconSize = 20;
         xIconSprite.width = iconSize;
         xIconSprite.height = iconSize;
-        xIconSprite.x = -75; // Position icon to the left
+        xIconSprite.x = -52;
         shareButtonContent.addChild(xIconSprite);
-        
-        // Text (positioned to the right of the icon)
+
         const shareBtnText = new PIXI.Text("Share on X", {
             fill: "#00ff66",
-            fontSize: 24,
+            fontSize: 16,
             fontWeight: "bold",
             fontFamily: "Orbitron"
         });
-        shareBtnText.anchor.set(0, 0.5); // Anchor to left center
-        shareBtnText.x = xIconSprite.x + iconSize/2 + 3; // Position text next to icon
+        shareBtnText.anchor.set(0, 0.5);
+        shareBtnText.x = xIconSprite.x + iconSize/2 + 4;
         shareButtonContent.addChild(shareBtnText);
-        
+
         shareButton.interactive = true;
         shareButton.buttonMode = true;
         shareButton.cursor = "pointer";
-        
+
         shareButton.on("pointerover", () => {
-            redrawShareButtonBg(0x1a1a1a, 3);
+            drawPillBtn(shareBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x374151, 0x00ff66, 3);
             shareBtnText.style.fill = "#ffff66";
-            shareButton.scale.set(1.02);
         });
         shareButton.on("pointerout", () => {
-            redrawShareButtonBg(0x000000, 2);
+            drawPillBtn(shareBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x1f2937, 0x00ff66, 2);
             shareBtnText.style.fill = "#00ff66";
-            shareButton.scale.set(1.0);
         });
         shareButton.on("pointerdown", () => {
             shareToTwitter(win, score);
         });
-        
+
         mainContentContainer.addChild(shareButton);
-        
-        // Download result image button (below share button)
+
+        // Download result image (right, bottom) — pill button beside result card
         const downloadButton = new PIXI.Container();
-        downloadButton.x = playAgainContainer.x; // Same x position as share button
-        downloadButton.y = leaderboardCard.y + 80; // Below share button
-        
+        downloadButton.x = 390;
+        downloadButton.y = actionBtnYOffset;
+
         const downloadBtnBg = new PIXI.Graphics();
-        const downloadBtnWidth = 200; // Wider to fit "Download result image" text
-        const downloadBtnHeight = 25;
-        
-        const redrawDownloadButtonBg = (fill, borderThickness) => {
-            downloadBtnBg.clear();
-            downloadBtnBg.beginFill(fill, 0.75);
-            downloadBtnBg.drawRoundedRect(-downloadBtnWidth/2, -downloadBtnHeight/2, downloadBtnWidth, downloadBtnHeight, 10);
-            downloadBtnBg.endFill();
-            downloadBtnBg.lineStyle(borderThickness, 0x00ff66, 1);
-            downloadBtnBg.drawRoundedRect(-downloadBtnWidth/2, -downloadBtnHeight/2, downloadBtnWidth, downloadBtnHeight, 10);
-        };
-        
-        redrawDownloadButtonBg(0x000000, 2);
+        drawPillBtn(downloadBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x1f2937, 0x00ff66, 2);
         downloadButton.addChild(downloadBtnBg);
-        
-        const downloadBtnText = new PIXI.Text("Download result image", {
+
+        const downloadBtnText = new PIXI.Text("Download image", {
             fill: "#00ff66",
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: "bold",
             fontFamily: "Orbitron"
         });
         downloadBtnText.anchor.set(0.5);
         downloadButton.addChild(downloadBtnText);
-        
+
         downloadButton.interactive = true;
         downloadButton.buttonMode = true;
         downloadButton.cursor = "pointer";
-        
+
         downloadButton.on("pointerover", () => {
-            redrawDownloadButtonBg(0x1a1a1a, 3);
+            drawPillBtn(downloadBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x374151, 0x00ff66, 3);
             downloadBtnText.style.fill = "#ffff66";
-            downloadButton.scale.set(1.02);
         });
         downloadButton.on("pointerout", () => {
-            redrawDownloadButtonBg(0x000000, 2);
+            drawPillBtn(downloadBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x1f2937, 0x00ff66, 2);
             downloadBtnText.style.fill = "#00ff66";
-            downloadButton.scale.set(1.0);
         });
         downloadButton.on("pointerdown", async () => {
             await downloadResultImage(win, score);
         });
-        
+
         mainContentContainer.addChild(downloadButton);
     }
 
