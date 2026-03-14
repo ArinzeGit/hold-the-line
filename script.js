@@ -1033,8 +1033,12 @@
         albumLinkText.style.fill = "#00ff66";
     });
 
-    albumLinkContainer.on("pointerdown", openLink);
-    albumLinkContainer.on("tap", openLink);  // ensures Safari mobile recognizes it
+    albumLinkContainer.on("tap", openLink);  // tap is triggered by a touch on the screen for mobile browsers
+    albumLinkContainer.on("pointerdown", (event) => {
+        // pointerdown is triggered by a click on the screen for desktop browsers (ignore if triggered by a touch on mobile browsers)
+        if (event.pointerType === 'touch') return;
+        openLink();
+    });
 
     function openLink() {
         window.open("https://push.fm/fl/soldier-manfred", "_blank");
@@ -2812,8 +2816,11 @@
             albumBtnText.style.fill = "#00ff66";
             albumButton.scale.set(1.0); // Reset scale
         });
-        albumButton.on("pointerdown", openLink);
-        albumButton.on("tap", openLink);  // ensures Safari mobile recognizes it
+        albumButton.on("tap", openLink);  // tap is triggered by a touch on the screen for mobile browsers
+        albumButton.on("pointerdown", (event) => {
+            if (event.pointerType === 'touch') return;
+            openLink();
+        });
 
         gameOverScene.addChild(albumButton);
 
@@ -2859,12 +2866,13 @@
             drawPillBtn(shareBtnBg, actionBtnWidth, actionBtnHeight, actionBtnRadius, 0x1f2937, 0x00ff66, 2);
             shareBtnText.style.fill = "#00ff66";
         });
-        shareButton.on("pointerdown", () => {
-            shareToTwitter(win, score);
-        });
         shareButton.on("tap", () => {
             shareToTwitter(win, score);
-        });  // ensures Safari mobile recognizes it
+        });  // tap is triggered by a touch on the screen for mobile browsers
+        shareButton.on("pointerdown", (event) => {
+            if (event.pointerType === 'touch') return;
+            shareToTwitter(win, score);
+        });
 
         mainContentContainer.addChild(shareButton);
 
