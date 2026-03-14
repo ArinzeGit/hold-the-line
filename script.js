@@ -1032,9 +1032,13 @@
         albumLinkBg.drawRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, buttonRadius);
         albumLinkText.style.fill = "#00ff66";
     });
-    albumLinkContainer.on("pointerdown", () => {
+
+    albumLinkContainer.on("pointerdown", openLink);
+    albumLinkContainer.on("tap", openLink);  // ensures Safari mobile recognizes it
+
+    function openLink() {
         window.open("https://push.fm/fl/soldier-manfred", "_blank");
-    });
+    }
 
     // Add subtle glow animation to title (yellow theme to match album)
     app.ticker.add(() => {
@@ -2808,9 +2812,8 @@
             albumBtnText.style.fill = "#00ff66";
             albumButton.scale.set(1.0); // Reset scale
         });
-        albumButton.on("pointerdown", () => {
-            window.open("https://push.fm/fl/soldier-manfred", "_blank");
-        });
+        albumButton.on("pointerdown", openLink);
+        albumButton.on("tap", openLink);  // ensures Safari mobile recognizes it
 
         gameOverScene.addChild(albumButton);
 
@@ -2859,6 +2862,9 @@
         shareButton.on("pointerdown", () => {
             shareToTwitter(win, score);
         });
+        shareButton.on("tap", () => {
+            shareToTwitter(win, score);
+        });  // ensures Safari mobile recognizes it
 
         mainContentContainer.addChild(shareButton);
 
