@@ -134,6 +134,7 @@
         return new Promise((resolve) => {
             const soundConfigs = [
                 { name: 'backgroundMusic', src: ['/assets/sounds/killer-by-manfred.mp3'], loop: true, volume: 1 },
+                { name: 'gameplayMusic', src: ['/assets/sounds/get-money-by-manfred.mp3'], loop: false, volume: 0.5 },
                 { name: 'shootSound', src: ['/assets/sounds/short-laser-gun-shot.wav'] },
                 { name: 'enemyDeathSound', src: ['/assets/sounds/quick-knife-slice-cutting.wav'] },
                 { name: 'gotCollectibleSound', src: ['/assets/sounds/sparkle-hybrid-transition.wav'] },
@@ -176,7 +177,7 @@
     }
 
     // Declare sound variables in outer scope
-    let backgroundMusic, shootSound, enemyDeathSound, gotCollectibleSound, 
+    let backgroundMusic, gameplayMusic, shootSound, enemyDeathSound, gotCollectibleSound, 
         playerDeathSound, countdownSound, winSound, loseSound, 
         congratulationsSound, missionFailedSound, leaderboardApplauseSound;
 
@@ -211,6 +212,7 @@
         
         // Assign sounds to variables
         backgroundMusic = sounds.backgroundMusic;
+        gameplayMusic = sounds.gameplayMusic;
         shootSound = sounds.shootSound;
         enemyDeathSound = sounds.enemyDeathSound;
         gotCollectibleSound = sounds.gotCollectibleSound;
@@ -2310,6 +2312,7 @@
     }
 
     async function endGame(win) {
+        if (gameplayMusic) gameplayMusic.stop();
         isCountdownPlaying? (countdownSound.stop(),isCountdownPlaying = false) : null;
         win ? (setTimeout(() => {
             congratulationsSound.play();
@@ -2955,6 +2958,7 @@
             backgroundMusicTimeout = null;
         }
         backgroundMusic.stop();
+        if (gameplayMusic) gameplayMusic.play();
 
         // Reset variables
         collectedLetters.clear();
