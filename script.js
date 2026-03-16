@@ -134,7 +134,8 @@
         return new Promise((resolve) => {
             const soundConfigs = [
                 { name: 'backgroundMusic', src: ['/assets/sounds/killer-by-manfred.mp3'], loop: true, volume: 1 },
-                { name: 'gameplayMusic', src: ['/assets/sounds/get-money-by-manfred.mp3'], loop: false, volume: 0.5 },
+                { name: 'gameplayMusicGetMoney', src: ['/assets/sounds/get-money-by-manfred.mp3'], loop: false, volume: 0.5 },
+                { name: 'gameplayMusicAnwuri', src: ['/assets/sounds/anwuri-by-manfred.mp3'], loop: false, volume: 0.5 },
                 { name: 'shootSound', src: ['/assets/sounds/short-laser-gun-shot.wav'] },
                 { name: 'enemyDeathSound', src: ['/assets/sounds/quick-knife-slice-cutting.wav'] },
                 { name: 'gotCollectibleSound', src: ['/assets/sounds/sparkle-hybrid-transition.wav'] },
@@ -177,9 +178,10 @@
     }
 
     // Declare sound variables in outer scope
-    let backgroundMusic, gameplayMusic, shootSound, enemyDeathSound, gotCollectibleSound, 
+    let backgroundMusic, gameplayMusicGetMoney, gameplayMusicAnwuri, shootSound, enemyDeathSound, gotCollectibleSound, 
         playerDeathSound, countdownSound, winSound, loseSound, 
         congratulationsSound, missionFailedSound, leaderboardApplauseSound;
+    let gameplayPlayCount = 0; // alternates which gameplay track plays (odd = get-money, even = anwuri)
 
     // Parse URL parameters for deep linking
     function parseUrlParams() {
@@ -212,7 +214,8 @@
         
         // Assign sounds to variables
         backgroundMusic = sounds.backgroundMusic;
-        gameplayMusic = sounds.gameplayMusic;
+        gameplayMusicGetMoney = sounds.gameplayMusicGetMoney;
+        gameplayMusicAnwuri = sounds.gameplayMusicAnwuri;
         shootSound = sounds.shootSound;
         enemyDeathSound = sounds.enemyDeathSound;
         gotCollectibleSound = sounds.gotCollectibleSound;
@@ -2312,7 +2315,8 @@
     }
 
     async function endGame(win) {
-        if (gameplayMusic) gameplayMusic.stop();
+        if (gameplayMusicGetMoney) gameplayMusicGetMoney.stop();
+        if (gameplayMusicAnwuri) gameplayMusicAnwuri.stop();
         isCountdownPlaying? (countdownSound.stop(),isCountdownPlaying = false) : null;
         win ? (setTimeout(() => {
             congratulationsSound.play();
@@ -2958,7 +2962,10 @@
             backgroundMusicTimeout = null;
         }
         backgroundMusic.stop();
-        if (gameplayMusic) gameplayMusic.play();
+        gameplayPlayCount += 1;
+        const playGetMoney = gameplayPlayCount % 2 === 1;
+        if (playGetMoney && gameplayMusicGetMoney) gameplayMusicGetMoney.play();
+        if (!playGetMoney && gameplayMusicAnwuri) gameplayMusicAnwuri.play();
 
         // Reset variables
         collectedLetters.clear();
