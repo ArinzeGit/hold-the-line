@@ -256,6 +256,11 @@
 
     // Leaderboard data (will be fetched from Supabase)
     let leaderboard = [];
+    const LEADERBOARD_MAX = 10;
+    const LEADERBOARD_ROW_PX = 32;
+    const LEADERBOARD_VISIBLE_ROWS = 5; // viewport height; scroll if more rows
+    /** Top padding inside masked area so row 1 isn’t clipped (text was center-anchored at y=0). */
+    const LEADERBOARD_LIST_TOP_PAD = 8;
 
     // Supabase leaderboard functions
     async function fetchLeaderboard() {
@@ -270,7 +275,7 @@
                 .from('leaderboard')
                 .select('name, score')
                 .order('score', { ascending: false })
-                .limit(5);
+                .limit(LEADERBOARD_MAX);
 
             if (error) {
                 console.error('Error fetching leaderboard:', error);
@@ -1840,8 +1845,8 @@
             // Hit player
             if (hitTest(player, b)) {
                 playerDeathSound.play();
-                endGame(true); // For testing win scenario. Normally would be:
-                //endGame(false);
+                // endGame(true); // For testing win scenario. Normally would be:
+                endGame(false);
             }
 
             // Off screen
@@ -1999,17 +2004,17 @@
         container.removeChildren().forEach(c => c.destroy());
         
         leaderboardData.forEach((entry, i) => {
-            const yPos = startY + i * 32; // Slightly more spacing
+            const yPos = startY + i * LEADERBOARD_ROW_PX;
             
             const row = new PIXI.Container();
             row.y = yPos;
             
-            // Rank + name (white, left aligned)
+            // Rank + name (white, left aligned) — top-aligned so row 1 isn’t clipped above mask
             const nameText = new PIXI.Text(
                 `${i + 1}. ${entry.name || " ???"}`,
                 { fill: entry.pending ? "#ffff00" : "#ffffff", fontSize: 22, fontFamily: "Orbitron" }
             );
-            nameText.anchor.set(0, 0.5);
+            nameText.anchor.set(0, 0);
             nameText.x = 0;
             
             // Score (green, right aligned)
@@ -2017,7 +2022,7 @@
                 `${entry.score}`,
                 { fill: "#ffff00", fontSize: 22, fontFamily: "Orbitron" }
             );
-            scoreText.anchor.set(1, 0.5);
+            scoreText.anchor.set(1, 0);
             scoreText.x = rowWidth;
             
             row.addChild(nameText, scoreText);
@@ -2162,7 +2167,7 @@
         t2.anchor.set(0.5);
         t2.y = -58;
         inputModalContainer.addChild(t2);
-        const t3 = new PIXI.Text("Enter the same name or new name — only your highest score is kept.", {
+        const t3 = new PIXI.Text("Only your highest score is kept.", {
             fill: "#aaaaaa",
             fontSize: 13,
             fontFamily: "Orbitron",
@@ -2258,7 +2263,7 @@
         modalBg.drawRoundedRect(-220, -150, 440, 300, 15);
         inputModalContainer.addChild(modalBg);
 
-        const title = new PIXI.Text("🎉 Top 5 — claim your spot!", {
+        const title = new PIXI.Text("🎉 Top 10 — claim your spot!", {
             fill: "#ffff00",
             fontSize: 24,
             fontWeight: "bold",
@@ -2819,13 +2824,13 @@
 
         mainContentContainer.addChild(playAgainContainer);
 
-        // Leaderboard Card - sized to fit only the list
+        // Leaderboard Card - title + scrollable list (up to LEADERBOARD_MAX rows)
         const leaderboardCard = new PIXI.Container();
         leaderboardCard.y = 195;
         
-        // Card dimensions: title at top, list below, with padding
         const cardWidth = 560;
-        const cardHeight = 220; // Enough for title + 5 entries with padding
+        const listViewportH = LEADERBOARD_VISIBLE_ROWS * LEADERBOARD_ROW_PX;
+        const cardHeight = 70 + listViewportH + 24; // title + viewport + padding
         
         const leaderboardCardBg = new PIXI.Graphics();
         leaderboardCardBg.beginFill(0x000000, 0.75);
@@ -2836,7 +2841,7 @@
         leaderboardCard.addChild(leaderboardCardBg);
 
         // Leaderboard title
-        const lbTitle = new PIXI.Text("Top 5 Soldiers", {
+        const lbTitle = new PIXI.Text("Top 10 Soldiers", {
             fill: "#ffff00",
             fontSize: 28,
             fontWeight: "bold",
@@ -2847,10 +2852,67 @@
         lbTitle.y = -cardHeight/2 + 30;
         leaderboardCard.addChild(lbTitle);
 
-        // Leaderboard container
-        const leaderboardContainer = new PIXI.Container();
-        leaderboardContainer.y = -cardHeight/2 + 70; // Below title
-        leaderboardCard.addChild(leaderboardContainer);
+        const rowWidth = 520;
+        const leaderboardScrollRoot = new PIXI.Container();
+        leaderboardScrollRoot.y = -cardHeight / 2 + 58;
+        leaderboardCard.addChild(leaderboardScrollRoot);
+
+        const scrollMask = new PIXI.Graphics();
+        scrollMask.beginFill(0xffffff);
+        scrollMask.drawRect(-rowWidth / 2, 0, rowWidth, listViewportH);
+        scrollMask.endFill();
+        scrollMask.eventMode = "none";
+        leaderboardScrollRoot.addChild(scrollMask);
+
+        const leaderboardListInner = new PIXI.Container();
+        leaderboardListInner.mask = scrollMask;
+        leaderboardScrollRoot.addChild(leaderboardListInner);
+
+        leaderboardScrollRoot.eventMode = "static";
+        leaderboardScrollRoot.cursor = "grab";
+        leaderboardScrollRoot.hitArea = new PIXI.Rectangle(-rowWidth / 2, 0, rowWidth, listViewportH);
+
+        let leaderboardListScrollY = 0;
+        function getMaxLeaderboardScroll() {
+            const contentH = LEADERBOARD_LIST_TOP_PAD + leaderboard.length * LEADERBOARD_ROW_PX;
+            return Math.max(0, contentH - listViewportH);
+        }
+        function clampLeaderboardListScroll() {
+            const maxS = getMaxLeaderboardScroll();
+            leaderboardListScrollY = Math.max(-maxS, Math.min(0, leaderboardListScrollY));
+            leaderboardListInner.y = leaderboardListScrollY;
+        }
+
+        // Wheel is passive on canvas — do not call preventDefault() (browser throws).
+        leaderboardScrollRoot.on("wheel", (e) => {
+            if (e.stopPropagation) e.stopPropagation();
+            const step = e.deltaY > 0 ? LEADERBOARD_ROW_PX : -LEADERBOARD_ROW_PX;
+            leaderboardListScrollY -= step * 0.35;
+            clampLeaderboardListScroll();
+        });
+
+        let lbDragActive = false;
+        let lbDragLastY = 0;
+        leaderboardScrollRoot.on("pointerdown", (e) => {
+            lbDragActive = true;
+            lbDragLastY = e.global.y;
+            leaderboardScrollRoot.cursor = "grabbing";
+        });
+        leaderboardScrollRoot.on("pointerglobalmove", (e) => {
+            if (!lbDragActive) return;
+            const dy = e.global.y - lbDragLastY;
+            lbDragLastY = e.global.y;
+            leaderboardListScrollY += dy;
+            clampLeaderboardListScroll();
+        });
+        leaderboardScrollRoot.on("pointerup", () => {
+            lbDragActive = false;
+            leaderboardScrollRoot.cursor = "grab";
+        });
+        leaderboardScrollRoot.on("pointerupoutside", () => {
+            lbDragActive = false;
+            leaderboardScrollRoot.cursor = "grab";
+        });
 
         // Loading text (will be removed after fetch)
         const loadingText = new PIXI.Text("Loading...", {
@@ -2859,43 +2921,35 @@
             fontFamily: "Orbitron"
         });
         loadingText.anchor.set(0.5);
-        loadingText.y = 40;
-        leaderboardContainer.addChild(loadingText);
+        loadingText.y = listViewportH / 2;
+        leaderboardScrollRoot.addChild(loadingText);
 
-        // Fetch leaderboard from Supabase
-        const rowWidth = 520;
-        const leaderboardYStart = 0;
+        const leaderboardYStart = LEADERBOARD_LIST_TOP_PAD;
         
         fetchLeaderboard().then((fetchedLeaderboard) => {
             // Remove loading text
             if (loadingText.parent) {
-                leaderboardContainer.removeChild(loadingText);
+                leaderboardScrollRoot.removeChild(loadingText);
             }
             
             // Update global leaderboard
             leaderboard = fetchedLeaderboard.length > 0 ? fetchedLeaderboard : [];
             
-            // Pad with empty entries if leaderboard has fewer than 5 entries
-            while (leaderboard.length < 5) {
+            while (leaderboard.length < LEADERBOARD_MAX) {
                 leaderboard.push({ name: "---", score: 0 });
             }
-            leaderboard = leaderboard.slice(0, 5); // Ensure max 5 entries
+            leaderboard = leaderboard.slice(0, LEADERBOARD_MAX);
 
-            // Check if player qualifies
-            // Player qualifies if leaderboard has fewer than 5 real entries, or score beats the worst entry
             const realEntries = leaderboard.filter(e => e.score > 0);
 
             let qualifies;
 
-            if (realEntries.length < 5) {
-                // There is still room on the leaderboard
+            if (realEntries.length < LEADERBOARD_MAX) {
                 qualifies = score > 0;
             } else {
                 const lowestRealScore = Math.min(
                     ...realEntries.map(e => e.score)
                 );
-
-                // Ignore ties by using strict >
                 qualifies = score > lowestRealScore;
             }
             
@@ -2903,11 +2957,13 @@
                 leaderboardApplauseSound.play();
                 leaderboard.push({ name: null, score, pending: true });
                 leaderboard.sort((a, b) => b.score - a.score);
-                leaderboard = leaderboard.slice(0, 5);
+                leaderboard = leaderboard.slice(0, LEADERBOARD_MAX);
             }
 
-            // Render leaderboard
-            renderLeaderboard(leaderboardContainer, leaderboard, leaderboardYStart, rowWidth);
+            leaderboardListScrollY = 0;
+            leaderboardListInner.y = 0;
+            renderLeaderboard(leaderboardListInner, leaderboard, leaderboardYStart, rowWidth);
+            clampLeaderboardListScroll();
 
             // Show input modal if qualified
             if (qualifies) {
@@ -2918,11 +2974,10 @@
                             // Re-fetch leaderboard to get updated data (includes the newly submitted score)
                             const updatedLeaderboard = await fetchLeaderboard();
                             if (updatedLeaderboard.length > 0) {
-                                // Pad to 5 entries if needed
-                                while (updatedLeaderboard.length < 5) {
+                                while (updatedLeaderboard.length < LEADERBOARD_MAX) {
                                     updatedLeaderboard.push({ name: "---", score: 0 });
                                 }
-                                leaderboard = updatedLeaderboard.slice(0, 5);
+                                leaderboard = updatedLeaderboard.slice(0, LEADERBOARD_MAX);
                             } else {
                                 // If re-fetch failed, update the pending entry locally
                                 const currentPendingIndex = leaderboard.findIndex(e => e.pending);
@@ -2940,7 +2995,10 @@
                             }
                         }
 
-                        renderLeaderboard(leaderboardContainer, leaderboard, leaderboardYStart, rowWidth);
+                        leaderboardListScrollY = 0;
+                        leaderboardListInner.y = 0;
+                        renderLeaderboard(leaderboardListInner, leaderboard, leaderboardYStart, rowWidth);
+                        clampLeaderboardListScroll();
                     });
                 }, 500);
             }
@@ -2948,7 +3006,7 @@
             console.error('Error loading leaderboard:', err);
             // Remove loading text and show error state
             if (loadingText.parent) {
-                leaderboardContainer.removeChild(loadingText);
+                leaderboardScrollRoot.removeChild(loadingText);
             }
             
             // Show empty/error state
@@ -2958,8 +3016,8 @@
                 fontFamily: "Orbitron"
             });
             errorText.anchor.set(0.5);
-            errorText.y = 40;
-            leaderboardContainer.addChild(errorText);
+            errorText.y = listViewportH / 2;
+            leaderboardScrollRoot.addChild(errorText);
         });
 
         mainContentContainer.addChild(leaderboardCard);

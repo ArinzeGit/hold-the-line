@@ -90,7 +90,7 @@ You can review and adjust limits in the dashboard: **Authentication** → **Rate
 ## How it works in-game
 
 - Players play **without** signing in.
-- If they qualify for the **Top 5**, they enter **email + display name**, tap **Send code**, then enter the **code from the email** and tap **Verify & save**.
+- If they qualify for the **Top 10**, they enter **email + display name**, tap **Send code**, then enter the **code from the email** and tap **Verify & save**.
 - A **device hash** (stored in `localStorage` + hashed) is sent with the score for **audit** and anti-abuse review; **deduplication** is by **`user_id`** (one leaderboard row per account).
 - If the same user improves their score, the RPC **keeps the higher score** and updates the display name when the new score is higher.
 
