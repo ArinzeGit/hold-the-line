@@ -37,6 +37,7 @@
     const view = app.view;
     view.style.position = "absolute";
     view.style.display = "block"; // removes inline gaps if parent uses inline-block
+    view.style.touchAction = "none"; // let Pixi receive swipes (touch-action is not inherited onto canvas)
     document.getElementById("game-container").appendChild(view);
 
     // Simple resize function: scales to fill screen while maintaining aspect ratio
@@ -2891,27 +2892,56 @@
             clampLeaderboardListScroll();
         });
 
+        // Touch/mobile: pointerglobalmove often doesn’t fire on the container while dragging.
+        // Use window pointermove + optional pointer capture on the canvas.
         let lbDragActive = false;
-        let lbDragLastY = 0;
-        leaderboardScrollRoot.on("pointerdown", (e) => {
-            lbDragActive = true;
-            lbDragLastY = e.global.y;
-            leaderboardScrollRoot.cursor = "grabbing";
-        });
-        leaderboardScrollRoot.on("pointerglobalmove", (e) => {
+        let lbDragLastClientY = 0;
+        let lbDragPointerId = null;
+
+        function lbDragEnd() {
             if (!lbDragActive) return;
-            const dy = e.global.y - lbDragLastY;
-            lbDragLastY = e.global.y;
+            lbDragActive = false;
+            lbDragPointerId = null;
+            leaderboardScrollRoot.cursor = "grab";
+            window.removeEventListener("pointermove", onLbWindowPointerMove);
+            window.removeEventListener("pointerup", onLbWindowPointerEnd);
+            window.removeEventListener("pointercancel", onLbWindowPointerEnd);
+        }
+
+        function onLbWindowPointerMove(ev) {
+            if (!lbDragActive) return;
+            if (lbDragPointerId != null && ev.pointerId !== lbDragPointerId) return;
+            const dy = ev.clientY - lbDragLastClientY;
+            lbDragLastClientY = ev.clientY;
             leaderboardListScrollY += dy;
             clampLeaderboardListScroll();
-        });
-        leaderboardScrollRoot.on("pointerup", () => {
-            lbDragActive = false;
-            leaderboardScrollRoot.cursor = "grab";
-        });
-        leaderboardScrollRoot.on("pointerupoutside", () => {
-            lbDragActive = false;
-            leaderboardScrollRoot.cursor = "grab";
+        }
+
+        function onLbWindowPointerEnd(ev) {
+            if (lbDragPointerId != null && ev.pointerId !== lbDragPointerId) return;
+            try {
+                if (lbDragPointerId != null && app.view.releasePointerCapture) {
+                    app.view.releasePointerCapture(lbDragPointerId);
+                }
+            } catch (_) { /* ignore */ }
+            lbDragEnd();
+        }
+
+        leaderboardScrollRoot.on("pointerdown", (e) => {
+            if (e.pointerType === "mouse" && e.button !== 0) return;
+            if (lbDragActive) lbDragEnd();
+            lbDragActive = true;
+            lbDragLastClientY = e.nativeEvent.clientY;
+            lbDragPointerId = e.pointerId;
+            leaderboardScrollRoot.cursor = "grabbing";
+            try {
+                if (app.view.setPointerCapture && e.pointerId != null) {
+                    app.view.setPointerCapture(e.pointerId);
+                }
+            } catch (_) { /* ignore */ }
+            window.addEventListener("pointermove", onLbWindowPointerMove, { passive: true });
+            window.addEventListener("pointerup", onLbWindowPointerEnd);
+            window.addEventListener("pointercancel", onLbWindowPointerEnd);
         });
 
         // Loading text (will be removed after fetch)

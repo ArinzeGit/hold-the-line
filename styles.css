@@ -29,6 +29,10 @@ html, body {
   -ms-user-select: none;
 }
 
+#game-container canvas {
+  touch-action: none; /* ensure swipes reach Pixi on mobile (not only inherited from parent) */
+}
+
 #game-container {
   position:relative;
   width: 100%;
