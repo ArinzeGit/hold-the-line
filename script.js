@@ -245,7 +245,13 @@
     // Initialize Supabase client (only if credentials are provided)
     let supabaseClient = null;
     if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
-        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                detectSessionInUrl: true,
+                persistSession: true,
+                autoRefreshToken: true
+            }
+        });
     }
 
     // Leaderboard data (will be fetched from Supabase)
@@ -278,35 +284,48 @@
         }
     }
 
-    async function submitScore(name, score) {
-        // If Supabase is not configured, return false
+    /** Stable per-browser hash (prize dedupe / audit; not for security alone). */
+    async function getDeviceHash() {
+        const STORAGE_KEY = 'htl_device_id';
+        let id = null;
+        try {
+            id = localStorage.getItem(STORAGE_KEY);
+        } catch (e) { /* ignore */ }
+        if (!id) {
+            id = crypto.randomUUID();
+            try { localStorage.setItem(STORAGE_KEY, id); } catch (e) { /* ignore */ }
+        }
+        const raw = id + '|' + (navigator.userAgent || '') + '|' + (navigator.hardwareConcurrency || 0);
+        const enc = new TextEncoder().encode(raw);
+        const buf = await crypto.subtle.digest('SHA-256', enc);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    /**
+     * Submit score after Supabase Auth; one row per user, keeps highest score only.
+     * Email comes from auth.users (stored in leaderboard via RPC for exports).
+     */
+    async function submitLeaderboardScore(name, score) {
         if (!supabaseClient) {
             console.warn('Supabase not configured. Score not submitted.');
             return false;
         }
-
-        // Validate inputs
         if (!name || name.trim() === '' || typeof score !== 'number' || score < 0) {
             console.error('Invalid score submission:', { name, score });
             return false;
         }
-
-        // Sanitize name (trim and limit length)
         const sanitizedName = name.trim().substring(0, 20);
-
+        const p_device_hash = await getDeviceHash();
         try {
-            const { data, error } = await supabaseClient
-                .from('leaderboard')
-                .insert([
-                    { name: sanitizedName, score: score }
-                ])
-                .select();
-
+            const { error } = await supabaseClient.rpc('submit_leaderboard_score', {
+                p_name: sanitizedName,
+                p_score: score,
+                p_device_hash: p_device_hash
+            });
             if (error) {
                 console.error('Error submitting score:', error);
                 return false;
             }
-
             return true;
         } catch (err) {
             console.error('Exception submitting score:', err);
@@ -1821,8 +1840,8 @@
             // Hit player
             if (hitTest(player, b)) {
                 playerDeathSound.play();
-                // endGame(true); // For testing win scenario. Normally would be:
-                endGame(false);
+                endGame(true); // For testing win scenario. Normally would be:
+                //endGame(false);
             }
 
             // Off screen
@@ -1933,13 +1952,20 @@
     // Initial spawn
     startSpawning();
 
-    // High score input modal (cleaner approach)
-    let inputModalLayer = null;   // overlay + modal card; blocks view and interaction until saved
+    // High score modal (Supabase Auth + email for prizes; legacy name-only if no Supabase)
+    let inputModalLayer = null;
     let inputModalContainer = null;
     let inputModalInput = null;
     let inputModalButton = null;
+    /** All extra DOM nodes created by auth modal (inputs, buttons, error div) */
+    let inputModalDomNodes = [];
+    let inputModalResizeHandler = null;
 
     function removeHighScoreModal() {
+        if (inputModalResizeHandler) {
+            window.removeEventListener("resize", inputModalResizeHandler);
+            inputModalResizeHandler = null;
+        }
         if (inputModalLayer && inputModalLayer.parent) {
             gameOverScene.removeChild(inputModalLayer);
             inputModalLayer.destroy({ children: true });
@@ -1950,6 +1976,9 @@
             if (inputModalInput._viewportResizeHandler && window.visualViewport) {
                 window.visualViewport.removeEventListener("resize", inputModalInput._viewportResizeHandler);
             }
+            if (inputModalInput._resizeHandler) {
+                window.removeEventListener("resize", inputModalInput._resizeHandler);
+            }
             if (inputModalInput.parentNode) {
                 document.body.removeChild(inputModalInput);
             }
@@ -1959,6 +1988,10 @@
         }
         inputModalInput = null;
         inputModalButton = null;
+        inputModalDomNodes.forEach(node => {
+            if (node && node.parentNode) node.parentNode.removeChild(node);
+        });
+        inputModalDomNodes = [];
     }
 
     // Modular leaderboard renderer
@@ -1994,14 +2027,215 @@
         });
     }
 
-    // Create/show input modal for high score entry
-    function showHighScoreInputModal(callback) {
+    function styleModalInput(el) {
+        el.style.position = "absolute";
+        el.style.fontFamily = "Orbitron";
+        el.style.fontSize = "18px";
+        el.style.fontWeight = "bold";
+        el.style.textAlign = "center";
+        el.style.width = "300px";
+        el.style.height = "36px";
+        el.style.background = "#111";
+        el.style.color = "#fff";
+        el.style.border = "2px solid #ffff00";
+        el.style.borderRadius = "8px";
+        el.style.padding = "0 10px";
+        el.style.outline = "none";
+    }
+
+    function styleModalButton(el) {
+        el.style.position = "absolute";
+        el.style.fontFamily = "Orbitron";
+        el.style.fontSize = "16px";
+        el.style.fontWeight = "bold";
+        el.style.width = "280px";
+        el.style.height = "40px";
+        el.style.background = "#00ff66";
+        el.style.color = "#000";
+        el.style.border = "none";
+        el.style.borderRadius = "8px";
+        el.style.cursor = "pointer";
+        el.style.transition = "background 0.2s";
+    }
+
+    /** Name only (Supabase not configured). */
+    function showHighScoreLegacyNameModal(callback) {
+        removeHighScoreModal();
+        inputModalLayer = new PIXI.Container();
+        const blockOverlay = new PIXI.Graphics();
+        blockOverlay.beginFill(0x000000, 0.92);
+        blockOverlay.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        blockOverlay.endFill();
+        blockOverlay.eventMode = "static";
+        blockOverlay.cursor = "default";
+        inputModalLayer.addChild(blockOverlay);
+        inputModalContainer = new PIXI.Container();
+        inputModalContainer.x = GAME_WIDTH / 2;
+        inputModalContainer.y = GAME_HEIGHT / 2;
+        inputModalLayer.addChild(inputModalContainer);
+        gameOverScene.addChild(inputModalLayer);
+        const modalBg = new PIXI.Graphics();
+        modalBg.beginFill(0x000000, 0.9);
+        modalBg.drawRoundedRect(-200, -100, 400, 200, 15);
+        modalBg.endFill();
+        modalBg.lineStyle(3, 0xffff00, 1);
+        modalBg.drawRoundedRect(-200, -100, 400, 200, 15);
+        inputModalContainer.addChild(modalBg);
+        const title = new PIXI.Text("🎉 New High Score!", { fill: "#ffff00", fontSize: 28, fontWeight: "bold", fontFamily: "Orbitron" });
+        title.anchor.set(0.5);
+        title.y = -60;
+        inputModalContainer.addChild(title);
+        inputModalInput = document.createElement("input");
+        inputModalInput.type = "text";
+        inputModalInput.maxLength = 20;
+        inputModalInput.placeholder = "Your name";
+        styleModalInput(inputModalInput);
+        inputModalButton = document.createElement("button");
+        inputModalButton.textContent = "SAVE";
+        styleModalButton(inputModalButton);
+        inputModalButton.style.width = "150px";
+        function positionModalElements() {
+            const canvasRect = app.view.getBoundingClientRect();
+            const scale = app.stage.scale.x;
+            const centerX = canvasRect.left + canvasRect.width / 2;
+            const centerY = canvasRect.top + canvasRect.height / 2;
+            const inputW = 300, inputH = 35, buttonW = 150, buttonH = 40;
+            inputModalInput.style.left = `${centerX - inputW / 2}px`;
+            inputModalInput.style.top = `${centerY - inputH / 2 + 15}px`;
+            inputModalInput.style.transform = `scale(${scale})`;
+            inputModalInput.style.transformOrigin = "center center";
+            inputModalButton.style.left = `${centerX - buttonW / 2}px`;
+            inputModalButton.style.top = `${centerY - buttonH / 2 + 60}px`;
+            inputModalButton.style.transform = `scale(${scale})`;
+            inputModalButton.style.transformOrigin = "center center";
+        }
+        positionModalElements();
+        document.body.appendChild(inputModalInput);
+        document.body.appendChild(inputModalButton);
+        inputModalInput.focus();
+        function restoreScrollAfterKeyboard() { window.scrollTo(0, 0); }
+        inputModalInput.addEventListener("blur", () => setTimeout(restoreScrollAfterKeyboard, 200));
+        const viewportResizeHandler = () => {
+            if (window.visualViewport && window.visualViewport.height > window.innerHeight * 0.6) restoreScrollAfterKeyboard();
+        };
+        if (window.visualViewport) window.visualViewport.addEventListener("resize", viewportResizeHandler);
+        inputModalInput._viewportResizeHandler = viewportResizeHandler;
+        function saveName() {
+            if (!inputModalInput.value.trim()) return;
+            const playerName = inputModalInput.value.trim();
+            if (inputModalInput._resizeHandler) window.removeEventListener("resize", inputModalInput._resizeHandler);
+            removeHighScoreModal();
+            callback(playerName);
+        }
+        inputModalInput.addEventListener("keydown", e => { if (e.key === "Enter") saveName(); });
+        inputModalButton.addEventListener("click", saveName);
+        inputModalButton.addEventListener("mouseenter", () => { inputModalButton.style.background = "#ffff66"; });
+        inputModalButton.addEventListener("mouseleave", () => { inputModalButton.style.background = "#00ff66"; });
+        const resizeHandler = () => positionModalElements();
+        window.addEventListener("resize", resizeHandler);
+        inputModalInput._resizeHandler = resizeHandler;
+    }
+
+    /** Already has Supabase session — display name only, then submit via RPC. */
+    function showHighScoreQuickSessionModal(callback) {
+        removeHighScoreModal();
+        inputModalLayer = new PIXI.Container();
+        const bo = new PIXI.Graphics();
+        bo.beginFill(0x000000, 0.92);
+        bo.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        bo.endFill();
+        bo.eventMode = "static";
+        inputModalLayer.addChild(bo);
+        inputModalContainer = new PIXI.Container();
+        inputModalContainer.x = GAME_WIDTH / 2;
+        inputModalContainer.y = GAME_HEIGHT / 2;
+        inputModalLayer.addChild(inputModalContainer);
+        gameOverScene.addChild(inputModalLayer);
+        const mb = new PIXI.Graphics();
+        mb.beginFill(0x000000, 0.9);
+        mb.drawRoundedRect(-200, -95, 400, 190, 15);
+        mb.endFill();
+        mb.lineStyle(3, 0xffff00, 1);
+        mb.drawRoundedRect(-200, -95, 400, 190, 15);
+        inputModalContainer.addChild(mb);
+        const t2 = new PIXI.Text("You got high score again!", { fill: "#ffff00", fontSize: 22, fontWeight: "bold", fontFamily: "Orbitron" });
+        t2.anchor.set(0.5);
+        t2.y = -58;
+        inputModalContainer.addChild(t2);
+        const t3 = new PIXI.Text("Enter the same name or new name — only your highest score is kept.", {
+            fill: "#aaaaaa",
+            fontSize: 13,
+            fontFamily: "Orbitron",
+            align: "center",
+            wordWrap: true,
+            wordWrapWidth: 360
+        });
+        t3.anchor.set(0.5);
+        t3.y = -22;
+        inputModalContainer.addChild(t3);
+        const quickName = document.createElement("input");
+        quickName.type = "text";
+        quickName.maxLength = 20;
+        quickName.placeholder = "Display name";
+        styleModalInput(quickName);
+        const quickBtn = document.createElement("button");
+        quickBtn.textContent = "Save score";
+        styleModalButton(quickBtn);
+        inputModalDomNodes.push(quickName, quickBtn);
+        function posQuick() {
+            const canvasRect = app.view.getBoundingClientRect();
+            const scale = app.stage.scale.x;
+            const cx = canvasRect.left + canvasRect.width / 2;
+            const cy = canvasRect.top + canvasRect.height / 2;
+            const w = 300;
+            quickName.style.left = `${cx - w / 2}px`;
+            quickName.style.top = `${cy}px`;
+            quickName.style.transform = `scale(${scale})`;
+            quickBtn.style.left = `${cx - 140}px`;
+            quickBtn.style.top = `${cy + 50}px`;
+            quickBtn.style.transform = `scale(${scale})`;
+        }
+        posQuick();
+        inputModalDomNodes.forEach(n => document.body.appendChild(n));
+        quickName.focus();
+        const rh = () => posQuick();
+        window.addEventListener("resize", rh);
+        inputModalResizeHandler = rh;
+        function done() {
+            const n = quickName.value.trim();
+            if (!n) return;
+            window.removeEventListener("resize", rh);
+            inputModalResizeHandler = null;
+            removeHighScoreModal();
+            callback(n);
+        }
+        quickBtn.addEventListener("click", done);
+        quickName.addEventListener("keydown", e => { if (e.key === "Enter") done(); });
+        quickBtn.addEventListener("mouseenter", () => { quickBtn.style.background = "#ffff66"; });
+        quickBtn.addEventListener("mouseleave", () => { quickBtn.style.background = "#00ff66"; });
+    }
+
+    /**
+     * High score: email + Supabase Auth (email OTP code) + display name; or quick name if already signed in.
+     */
+    function showHighScoreEntryModal(score, callback) {
+        if (!supabaseClient) {
+            showHighScoreLegacyNameModal(callback);
+            return;
+        }
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (session && session.user) {
+                showHighScoreQuickSessionModal(callback);
+                return;
+            }
+            showHighScoreEmailOtpModal(score, callback);
+        });
+    }
+
+    function showHighScoreEmailOtpModal(_score, callback) {
         removeHighScoreModal();
 
-        // Layer: full-screen block overlay (almost invisible, not pressable) + modal card on top
         inputModalLayer = new PIXI.Container();
-
-        // Full-screen overlay: makes content behind almost invisible and blocks all pointer/touch
         const blockOverlay = new PIXI.Graphics();
         blockOverlay.beginFill(0x000000, 0.92);
         blockOverlay.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -2010,150 +2244,181 @@
         blockOverlay.cursor = "default";
         inputModalLayer.addChild(blockOverlay);
 
-        // Modal card (title, prompt) — only this + DOM input/button are visible and interactive
         inputModalContainer = new PIXI.Container();
         inputModalContainer.x = GAME_WIDTH / 2;
         inputModalContainer.y = GAME_HEIGHT / 2;
         inputModalLayer.addChild(inputModalContainer);
         gameOverScene.addChild(inputModalLayer);
 
-        // Modal background (dark card with border)
         const modalBg = new PIXI.Graphics();
         modalBg.beginFill(0x000000, 0.9);
-        modalBg.drawRoundedRect(-200, -100, 400, 200, 15);
+        modalBg.drawRoundedRect(-220, -150, 440, 300, 15);
         modalBg.endFill();
         modalBg.lineStyle(3, 0xffff00, 1);
-        modalBg.drawRoundedRect(-200, -100, 400, 200, 15);
+        modalBg.drawRoundedRect(-220, -150, 440, 300, 15);
         inputModalContainer.addChild(modalBg);
 
-        // Title
-        const title = new PIXI.Text("🎉 New High Score!", {
+        const title = new PIXI.Text("🎉 Top 5 — claim your spot!", {
             fill: "#ffff00",
-            fontSize: 28,
+            fontSize: 24,
             fontWeight: "bold",
             fontFamily: "Orbitron"
         });
         title.anchor.set(0.5);
-        title.y = -60;
+        title.y = -115;
         inputModalContainer.addChild(title);
 
-        // Prompt text
-        const prompt = new PIXI.Text("Enter your name:", {
-            fill: "#ffffff",
-            fontSize: 20,
-            fontFamily: "Orbitron"
+        const sub = new PIXI.Text("Get code via email to save your score\nand enter prize eligibility.", {
+            fill: "#cccccc",
+            fontSize: 14,
+            fontFamily: "Orbitron",
+            align: "center",
+            lineHeight: 18
         });
-        prompt.anchor.set(0.5);
-        prompt.y = -20;
-        inputModalContainer.addChild(prompt);
+        sub.anchor.set(0.5);
+        sub.y = -75;
+        inputModalContainer.addChild(sub);
 
-        // HTML input (positioned absolutely over canvas)
-        inputModalInput = document.createElement("input");
-        inputModalInput.type = "text";
-        inputModalInput.maxLength = 10;
-        inputModalInput.placeholder = "Your name";
-        inputModalInput.style.position = "absolute";
-        inputModalInput.style.fontFamily = "Orbitron";
-        inputModalInput.style.fontSize = "20px";
-        inputModalInput.style.fontWeight = "bold";
-        inputModalInput.style.textAlign = "center";
-        inputModalInput.style.width = "300px";
-        inputModalInput.style.height = "35px";
-        inputModalInput.style.background = "#111";
-        inputModalInput.style.color = "#fff";
-        inputModalInput.style.border = "2px solid #ffff00";
-        inputModalInput.style.borderRadius = "8px";
-        inputModalInput.style.padding = "0 10px";
-        inputModalInput.style.outline = "none";
+        const emailInput = document.createElement("input");
+        emailInput.type = "email";
+        emailInput.autocomplete = "email";
+        emailInput.placeholder = "Email";
+        styleModalInput(emailInput);
+        inputModalDomNodes.push(emailInput);
 
-        // Save button
-        inputModalButton = document.createElement("button");
-        inputModalButton.textContent = "SAVE";
-        inputModalButton.style.position = "absolute";
-        inputModalButton.style.fontFamily = "Orbitron";
-        inputModalButton.style.fontSize = "18px";
-        inputModalButton.style.fontWeight = "bold";
-        inputModalButton.style.width = "150px";
-        inputModalButton.style.height = "40px";
-        inputModalButton.style.background = "#00ff66";
-        inputModalButton.style.color = "#000";
-        inputModalButton.style.border = "none";
-        inputModalButton.style.borderRadius = "8px";
-        inputModalButton.style.cursor = "pointer";
-        inputModalButton.style.transition = "background 0.2s";
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.maxLength = 20;
+        nameInput.placeholder = "Display name (leaderboard)";
+        styleModalInput(nameInput);
+        inputModalDomNodes.push(nameInput);
 
-        // Position input and button (centered on canvas). Use left/top + half-width/half-height
-        // so centering doesn't depend on transform; then only scale() to match canvas.
-        function positionModalElements() {
+        const otpInput = document.createElement("input");
+        otpInput.type = "text";
+        otpInput.inputMode = "numeric";
+        otpInput.autocomplete = "one-time-code";
+        otpInput.maxLength = 10;
+        otpInput.placeholder = "Code from email";
+        otpInput.style.display = "none";
+        styleModalInput(otpInput);
+        inputModalDomNodes.push(otpInput);
+
+        const errDiv = document.createElement("div");
+        errDiv.style.position = "absolute";
+        errDiv.style.fontFamily = "Orbitron";
+        errDiv.style.fontSize = "12px";
+        errDiv.style.color = "#ff6666";
+        errDiv.style.textAlign = "center";
+        errDiv.style.width = "300px";
+        errDiv.style.pointerEvents = "none";
+        inputModalDomNodes.push(errDiv);
+
+        const primaryBtn = document.createElement("button");
+        primaryBtn.textContent = "Send code";
+        styleModalButton(primaryBtn);
+        inputModalDomNodes.push(primaryBtn);
+
+        let step = 1;
+        let emailForOtp = "";
+        let leaderboardDisplayName = "";
+
+        function setError(msg) {
+            errDiv.textContent = msg || "";
+        }
+
+        function positionAuthModal() {
             const canvasRect = app.view.getBoundingClientRect();
             const scale = app.stage.scale.x;
             const centerX = canvasRect.left + canvasRect.width / 2;
             const centerY = canvasRect.top + canvasRect.height / 2;
-            const inputW = 300, inputH = 35;
-            const buttonW = 150, buttonH = 40;
-
-            inputModalInput.style.left = `${centerX - inputW / 2}px`;
-            inputModalInput.style.top = `${centerY - inputH / 2 + 15}px`;
-            inputModalInput.style.transform = `scale(${scale})`;
-            inputModalInput.style.transformOrigin = "center center";
-
-            inputModalButton.style.left = `${centerX - buttonW / 2}px`;
-            inputModalButton.style.top = `${centerY - buttonH / 2 + 60}px`;
-            inputModalButton.style.transform = `scale(${scale})`;
-            inputModalButton.style.transformOrigin = "center center";
+            const w = 300;
+            const place = (el, offsetY) => {
+                el.style.left = `${centerX - w / 2}px`;
+                el.style.top = `${centerY + offsetY}px`;
+                el.style.transform = `scale(${scale})`;
+                el.style.transformOrigin = "center center";
+            };
+            emailInput.style.display = step === 2 ? "none" : "block";
+            place(emailInput, -35);
+            nameInput.style.display = step === 2 ? "none" : "block";
+            place(nameInput, 10);
+            otpInput.style.display = step === 2 ? "block" : "none";
+            place(otpInput, 10);
+            place(errDiv, 95);
+            place(primaryBtn, 60);
+            primaryBtn.textContent = step === 1 ? "Send code" : "Verify & save";
         }
 
-        positionModalElements();
-        document.body.appendChild(inputModalInput);
-        document.body.appendChild(inputModalButton);
-        inputModalInput.focus();
+        positionAuthModal();
+        inputModalDomNodes.forEach(n => document.body.appendChild(n));
+        emailInput.focus();
 
-        // Mobile: when keyboard closes, restore scroll so page doesn't stay shifted (first-time dismiss bug)
-        function restoreScrollAfterKeyboard() {
-            window.scrollTo(0, 0);
-        }
-        inputModalInput.addEventListener("blur", () => {
-            setTimeout(restoreScrollAfterKeyboard, 200);
-        });
-        const viewportResizeHandler = () => {
-            if (window.visualViewport && window.visualViewport.height > window.innerHeight * 0.6) {
-                restoreScrollAfterKeyboard();
-            }
-        };
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener("resize", viewportResizeHandler);
-        }
-        inputModalInput._viewportResizeHandler = viewportResizeHandler;
-
-        // Save handler
-        function saveName() {
-            if (!inputModalInput.value.trim()) return;
-            const playerName = inputModalInput.value.trim();
-            
-            // Clean up resize handler
-            if (inputModalInput._resizeHandler) {
-                window.removeEventListener("resize", inputModalInput._resizeHandler);
-            }
-            removeHighScoreModal();
-            callback(playerName);
-        }
-
-        inputModalInput.addEventListener("keydown", e => {
-            if (e.key === "Enter") saveName();
-        });
-        inputModalButton.addEventListener("click", saveName);
-        inputModalButton.addEventListener("mouseenter", () => {
-            inputModalButton.style.background = "#ffff66";
-        });
-        inputModalButton.addEventListener("mouseleave", () => {
-            inputModalButton.style.background = "#00ff66";
-        });
-
-        // Update position on resize
-        const resizeHandler = () => positionModalElements();
+        const resizeHandler = () => positionAuthModal();
         window.addEventListener("resize", resizeHandler);
-        // Store handler for cleanup if needed (we'll clean up on save)
-        inputModalInput._resizeHandler = resizeHandler;
+        inputModalResizeHandler = resizeHandler;
+
+        function cleanupAndFinish(name) {
+            removeHighScoreModal();
+            callback(name);
+        }
+
+        primaryBtn.addEventListener("click", async () => {
+            setError("");
+            if (step === 1) {
+                const email = emailInput.value.trim();
+                const display = nameInput.value.trim();
+                if (!email || !email.includes("@")) {
+                    setError("Enter a valid email.");
+                    return;
+                }
+                if (!display) {
+                    setError("Enter a display name.");
+                    return;
+                }
+                primaryBtn.disabled = true;
+                const { error } = await supabaseClient.auth.signInWithOtp({
+                    email,
+                    options: {
+                        shouldCreateUser: true,
+                        emailRedirectTo: `${window.location.origin}${window.location.pathname}`
+                    }
+                });
+                primaryBtn.disabled = false;
+                if (error) {
+                    setError(error.message || "Could not send code.");
+                    return;
+                }
+                emailForOtp = email;
+                leaderboardDisplayName = display;
+                step = 2;
+                positionAuthModal();
+                sub.text = "Enter the code from your email,\nthen tap Verify & save.";
+                setError("");
+                otpInput.focus();
+                return;
+            }
+            const token = otpInput.value.trim().replace(/\s/g, "");
+            if (!token) {
+                setError("Enter the code from your email.");
+                return;
+            }
+            primaryBtn.disabled = true;
+            const { data, error: verr } = await supabaseClient.auth.verifyOtp({
+                email: emailForOtp,
+                token,
+                type: "email"
+            });
+            primaryBtn.disabled = false;
+            if (verr || !data.session) {
+                setError((verr && verr.message) || "Invalid code. Try again.");
+                return;
+            }
+            const finalName = leaderboardDisplayName || (data.user.user_metadata && data.user.user_metadata.name) || "Soldier";
+            cleanupAndFinish(finalName);
+        });
+
+        primaryBtn.addEventListener("mouseenter", () => { if (!primaryBtn.disabled) primaryBtn.style.background = "#ffff66"; });
+        primaryBtn.addEventListener("mouseleave", () => { if (!primaryBtn.disabled) primaryBtn.style.background = "#00ff66"; });
     }
 
     // End game
@@ -2647,10 +2912,8 @@
             // Show input modal if qualified
             if (qualifies) {
                 setTimeout(() => {
-                    showHighScoreInputModal(async (playerName) => {
-                        // Submit score to Supabase
-                        const success = await submitScore(playerName, score);
-                        
+                    showHighScoreEntryModal(score, async (playerName) => {
+                        const success = await submitLeaderboardScore(playerName, score);
                         if (success) {
                             // Re-fetch leaderboard to get updated data (includes the newly submitted score)
                             const updatedLeaderboard = await fetchLeaderboard();
