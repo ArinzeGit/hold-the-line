@@ -1846,8 +1846,8 @@
             // Hit player
             if (hitTest(player, b)) {
                 playerDeathSound.play();
-                endGame(true); // For testing win scenario. Normally would be:
-                // endGame(false);
+                // endGame(true); // For testing win scenario. Normally would be:
+                endGame(false);
             }
 
             // Off screen
