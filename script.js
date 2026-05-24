@@ -97,15 +97,15 @@
     // Asset loading function
     async function loadAllAssets() {
         const assetPaths = [
-            'assets/soldier-album-art.png',
-            'assets/soldier-sprite-gamePlay.png',
-            'assets/soldier-sprite-endgame.png',
-            'assets/enemy-sprites/fear-sprite.png',
-            'assets/enemy-sprites/anxiety-sprite.png',
-            'assets/enemy-sprites/anger-sprite.png',
-            'assets/enemy-sprites/despair-sprite.png',
-            'assets/enemy-sprites/guilt-sprite.png',
-            'assets/x-twitter-icon.png'
+            'assets/images/soldier-album-art.png',
+            'assets/images/soldier-sprite-gamePlay.png',
+            'assets/images/soldier-sprite-endgame.png',
+            'assets/images/enemy-sprites/fear-sprite.png',
+            'assets/images/enemy-sprites/anxiety-sprite.png',
+            'assets/images/enemy-sprites/anger-sprite.png',
+            'assets/images/enemy-sprites/despair-sprite.png',
+            'assets/images/enemy-sprites/guilt-sprite.png',
+            'assets/images/x-twitter-icon.png'
         ];
 
         // Load textures using PIXI.Assets
@@ -730,7 +730,7 @@
 
     // Album artwork (load from assets)
     const albumArtSize = 280;
-    const albumArtSprite = new PIXI.Sprite(PIXI.Assets.get('assets/soldier-album-art.png'));
+    const albumArtSprite = new PIXI.Sprite(PIXI.Assets.get('assets/images/soldier-album-art.png'));
     albumArtSprite.anchor.set(0.5);
     albumArtSprite.width = albumArtSize;
     albumArtSprite.height = albumArtSize;
@@ -1490,7 +1490,7 @@
     }
 
     // Player sprite - use preloaded texture
-    const playerTexture = PIXI.Assets.get('assets/soldier-sprite-gamePlay.png');
+    const playerTexture = PIXI.Assets.get('assets/images/soldier-sprite-gamePlay.png');
     const player = new PIXI.Sprite(playerTexture);
 
     // Set anchor to center bottom so movement feels natural
@@ -1519,15 +1519,15 @@
         // Enemy sprite - use preloaded textures
         let enemyTexture;
         if (emotion == "Fear"){
-            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/fear-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/images/enemy-sprites/fear-sprite.png');
         }else if (emotion == "Anxiety"){
-            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/anxiety-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/images/enemy-sprites/anxiety-sprite.png');
         }else if (emotion == "Anger"){
-            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/anger-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/images/enemy-sprites/anger-sprite.png');
         }else if (emotion == "Despair"){
-            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/despair-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/images/enemy-sprites/despair-sprite.png');
         }else if (emotion == "Guilt"){
-            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/guilt-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/images/enemy-sprites/guilt-sprite.png');
         }
         const enemySprite = new PIXI.Sprite(enemyTexture);
 
@@ -1846,8 +1846,8 @@
             // Hit player
             if (hitTest(player, b)) {
                 playerDeathSound.play();
-                // endGame(true); // For testing win scenario. Normally would be:
-                endGame(false);
+                endGame(true); // For testing win scenario. Normally would be:
+                // endGame(false);
             }
 
             // Off screen
@@ -2539,7 +2539,7 @@
                 
                 resolve(shareCanvas.toDataURL('image/png'));
             };
-            albumArtImg.src = 'assets/soldier-album-art.png';
+            albumArtImg.src = 'assets/images/soldier-album-art.png';
         });
     }
     
@@ -3079,7 +3079,7 @@
         // Make it slightly smaller to fit within the button border (2px border means 4px total inset needed)
         const artSize = 88; // Slightly smaller to leave space for the 2px border
         
-        const albumArtThumb = new PIXI.Sprite(PIXI.Assets.get('assets/soldier-album-art.png'));
+        const albumArtThumb = new PIXI.Sprite(PIXI.Assets.get('assets/images/soldier-album-art.png'));
         albumArtThumb.anchor.set(0.5);
         albumArtThumb.width = artSize;
         albumArtThumb.height = artSize;
@@ -3194,7 +3194,7 @@
         const shareButtonContent = new PIXI.Container();
         shareButton.addChild(shareButtonContent);
 
-        const xIconSprite = new PIXI.Sprite(PIXI.Assets.get('assets/x-twitter-icon.png'));
+        const xIconSprite = new PIXI.Sprite(PIXI.Assets.get('assets/images/x-twitter-icon.png'));
         xIconSprite.anchor.set(0.5);
         const iconSize = 20;
         xIconSprite.width = iconSize;
