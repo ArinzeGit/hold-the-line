@@ -100,11 +100,11 @@
             'assets/images/soldier-album-art.png',
             'assets/images/soldier-sprite-gamePlay.png',
             'assets/images/soldier-sprite-endgame.png',
-            'assets/images/enemy-sprites/fear-sprite.png',
-            'assets/images/enemy-sprites/anxiety-sprite.png',
-            'assets/images/enemy-sprites/anger-sprite.png',
-            'assets/images/enemy-sprites/despair-sprite.png',
-            'assets/images/enemy-sprites/guilt-sprite.png',
+            'assets/enemy-sprites/fear-sprite.png',
+            'assets/enemy-sprites/anxiety-sprite.png',
+            'assets/enemy-sprites/anger-sprite.png',
+            'assets/enemy-sprites/despair-sprite.png',
+            'assets/enemy-sprites/guilt-sprite.png',
             'assets/images/x-twitter-icon.png'
         ];
 
@@ -1519,15 +1519,15 @@
         // Enemy sprite - use preloaded textures
         let enemyTexture;
         if (emotion == "Fear"){
-            enemyTexture = PIXI.Assets.get('assets/images/enemy-sprites/fear-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/fear-sprite.png');
         }else if (emotion == "Anxiety"){
-            enemyTexture = PIXI.Assets.get('assets/images/enemy-sprites/anxiety-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/anxiety-sprite.png');
         }else if (emotion == "Anger"){
-            enemyTexture = PIXI.Assets.get('assets/images/enemy-sprites/anger-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/anger-sprite.png');
         }else if (emotion == "Despair"){
-            enemyTexture = PIXI.Assets.get('assets/images/enemy-sprites/despair-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/despair-sprite.png');
         }else if (emotion == "Guilt"){
-            enemyTexture = PIXI.Assets.get('assets/images/enemy-sprites/guilt-sprite.png');
+            enemyTexture = PIXI.Assets.get('assets/enemy-sprites/guilt-sprite.png');
         }
         const enemySprite = new PIXI.Sprite(enemyTexture);
 
