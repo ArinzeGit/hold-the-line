@@ -4,7 +4,7 @@ A promotional game for **Manfred's** music album launch: **"Soldier"**
 
 A fast-paced action game where you play as a soldier defending against waves of negative emotions. Collect letters to spell "SOLDIER" while fending off enemies representing Fear, Anxiety, Anger, Despair, and Guilt.
 
-![Game Screenshot](assets/images/screenshot.png)
+![Game Screenshot](assets/gifs/hold-the-line-preview.gif)
 
 ## How to Play
 
